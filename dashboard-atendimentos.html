@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard de Atendimentos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0b0f1a;
+  --surface: #131929;
+  --surface2: #1a2236;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #e8edf5;
+  --muted: #7a8ba8;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --red: #ef4444;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --purple: #8b5cf6;
+  --pink: #ec4899;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  border-bottom: 1px solid var(--border2);
+  padding: 24px 32px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.header-left .badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  background: rgba(6,182,212,0.12);
+  border: 1px solid rgba(6,182,212,0.25);
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+.header-left h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+.header-left p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.header-right {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+.header-right span {
+  display: block;
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── FILTERS ── */
+.filters-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.filter-select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .2s;
+}
+.filter-select:focus { border-color: var(--accent); }
+.btn-reset {
+  margin-left: auto;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-family: 'Barlow', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-reset:hover { color: var(--text); border-color: var(--accent); }
+
+/* ── MAIN ── */
+.main { padding: 24px 32px 40px; }
+
+/* ── METRICS ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.metric:hover { border-color: var(--border2); }
+.metric::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.metric:nth-child(1)::before { background: var(--accent); }
+.metric:nth-child(2)::before { background: var(--accent2); }
+.metric:nth-child(3)::before { background: var(--green); }
+.metric:nth-child(4)::before { background: var(--amber); }
+.metric:nth-child(5)::before { background: var(--purple); }
+.metric-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.metric-value {
+  font-size: 30px;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  color: #fff;
+  line-height: 1;
+}
+.metric-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── GRID ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.card h3 {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; margin-bottom: 16px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.badge-sexo {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+}
+.badge-m { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-f { background: rgba(236,72,153,0.15); color: #f472b6; }
+.hora-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--accent2);
+  background: rgba(6,182,212,0.08);
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.motivo-text {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.idade-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+
+/* ── HIDDEN ROWS ── */
+.row-hidden { display: none; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .metrics { grid-template-columns: repeat(2,1fr); }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .header { flex-direction: column; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="badge">Central de Regulação Médica</div>
+    <h1>Dashboard de Atendimentos</h1>
+    <p>Registro de ocorrências · Análise por horário, bairro, motivo, idade e sexo</p>
+  </div>
+  <div class="header-right">
+    Total de registros<span id="totalGeral">17</span>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <span class="filter-label">Filtros</span>
+
+  <select class="filter-select" id="fBairro" onchange="aplicarFiltros()">
+    <option value="">Todos os bairros</option>
+    <option>Aeroporto</option><option>Bela Vista</option><option>Campestre</option>
+    <option>Centro</option><option>Dehon</option><option>Humaitá</option>
+    <option>Industrial</option><option>Jardim América</option><option>Monte Castelo</option>
+    <option>Oficinas</option><option>Passagem</option><option>Recife</option>
+    <option>Santo Antônio</option><option>São Cristóvão</option><option>Vila Nova</option>
+  </select>
+
+  <select class="filter-select" id="fSexo" onchange="aplicarFiltros()">
+    <option value="">Todos os sexos</option>
+    <option value="M">Masculino</option>
+    <option value="F">Feminino</option>
+  </select>
+
+  <select class="filter-select" id="fIdade" onchange="aplicarFiltros()">
+    <option value="">Todas as idades</option>
+    <option value="0-17">0 – 17 anos (criança/adolescente)</option>
+    <option value="18-39">18 – 39 anos (adulto jovem)</option>
+    <option value="40-59">40 – 59 anos (adulto)</option>
+    <option value="60+">60+ anos (idoso)</option>
+  </select>
+
+  <select class="filter-select" id="fTurno" onchange="aplicarFiltros()">
+    <option value="">Todos os turnos</option>
+    <option value="manha">Manhã (06h–12h)</option>
+    <option value="tarde">Tarde (12h–18h)</option>
+    <option value="noite">Noite (18h–00h)</option>
+  </select>
+
+  <button class="btn-reset" onclick="resetFiltros()">✕ Limpar filtros</button>
+</div>
+
+<div class="main">
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total filtrado</div>
+      <div class="metric-value" id="mTotal">17</div>
+      <div class="metric-sub">ocorrências</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Média de idade</div>
+      <div class="metric-value" id="mIdade">39</div>
+      <div class="metric-sub">anos</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Masculino</div>
+      <div class="metric-value" id="mMasc">9</div>
+      <div class="metric-sub" id="mMascPct">52.9%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Feminino</div>
+      <div class="metric-value" id="mFem">8</div>
+      <div class="metric-sub" id="mFemPct">47.1%</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pico de chamadas</div>
+      <div class="metric-value" id="mPico">08h</div>
+      <div class="metric-sub">horário</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS LINHA 1 -->
+  <div class="grid2">
+    <div class="card">
+      <h3>Atendimentos por turno do dia</h3>
+      <canvas id="chartTurno" height="180"></canvas>
+    </div>
+    <div class="card">
+      <h3>Distribuição por sexo</h3>
+      <canvas id="chartSexo" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS LINHA 2 -->
+  <div class="grid2">
+    <div class="card">
+      <h3>Atendimentos por bairro</h3>
+      <canvas id="chartBairro" height="220"></canvas>
+    </div>
+    <div class="card">
+      <h3>Distribuição por faixa etária</h3>
+      <canvas id="chartIdade" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- TABELA COMPLETA -->
+  <div class="card table-wrap">
+    <h3>Registros detalhados</h3>
+    <table id="tabelaPrincipal">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Horário</th>
+          <th>Bairro</th>
+          <th>Motivo da Ativação</th>
+          <th>Idade</th>
+          <th>Sexo</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="semDados" style="display:none;text-align:center;padding:32px;color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;">
+      Nenhum registro encontrado para os filtros selecionados.
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const DADOS = [
+  {hora:"08:55",bairro:"Centro",motivo:"Queda da própria altura, não consegue deambular, confusão mental",idade:56,sexo:"M"},
+  {hora:"07:20",bairro:"Vila Nova",motivo:"Dor torácica intensa com irradiação para braço esquerdo",idade:62,sexo:"M"},
+  {hora:"08:15",bairro:"Jardim América",motivo:"Crise convulsiva em via pública",idade:24,sexo:"F"},
+  {hora:"09:40",bairro:"Santo Antônio",motivo:"Dispneia grave e sibilância (Crise de Asma)",idade:12,sexo:"M"},
+  {hora:"10:05",bairro:"Industrial",motivo:"Trauma em membro inferior após queda de nível",idade:35,sexo:"M"},
+  {hora:"11:30",bairro:"Bela Vista",motivo:"Síncope seguida de queda em domicílio",idade:78,sexo:"F"},
+  {hora:"12:15",bairro:"Centro",motivo:"Atropelamento por motocicleta (Politrauma)",idade:29,sexo:"F"},
+  {hora:"13:50",bairro:"São Cristóvão",motivo:"Suspeita de AVC (Assimetria facial e fala arrastada)",idade:70,sexo:"M"},
+  {hora:"14:25",bairro:"Humaitá",motivo:"Ferimento por arma branca em região abdominal",idade:21,sexo:"M"},
+  {hora:"15:10",bairro:"Passagem",motivo:"Reação anafilática após picada de inseto",idade:8,sexo:"F"},
+  {hora:"16:45",bairro:"Oficinas",motivo:"Intoxicação exógena medicamentosa",idade:44,sexo:"F"},
+  {hora:"17:30",bairro:"Dehon",motivo:"Trabalho de parto em período expulsivo",idade:31,sexo:"F"},
+  {hora:"18:20",bairro:"Recife",motivo:"Colisão frontal entre dois automóveis",idade:52,sexo:"M"},
+  {hora:"19:00",bairro:"Campestre",motivo:"Queimadura de 2º grau em membros superiores",idade:19,sexo:"F"},
+  {hora:"20:15",bairro:"Monte Castelo",motivo:"Hemorragia digestiva alta (Hematêmese)",idade:65,sexo:"M"},
+  {hora:"21:40",bairro:"Aeroporto",motivo:"Crise de ansiedade com hiperventilação",idade:27,sexo:"F"},
+  {hora:"22:10",bairro:"Centro",motivo:"Agressão física com trauma cranioencefálico leve",idade:33,sexo:"M"},
+];
+
+function turno(hora) {
+  const h = parseInt(hora.split(':')[0]);
+  if (h >= 6 && h < 12) return 'manha';
+  if (h >= 12 && h < 18) return 'tarde';
+  return 'noite';
+}
+
+function faixaEtaria(idade) {
+  if (idade <= 17) return '0-17';
+  if (idade <= 39) return '18-39';
+  if (idade <= 59) return '40-59';
+  return '60+';
+}
+
+function filtrar() {
+  const b = document.getElementById('fBairro').value;
+  const s = document.getElementById('fSexo').value;
+  const i = document.getElementById('fIdade').value;
+  const t = document.getElementById('fTurno').value;
+  return DADOS.filter(d => {
+    if (b && d.bairro !== b) return false;
+    if (s && d.sexo !== s) return false;
+    if (i && faixaEtaria(d.idade) !== i) return false;
+    if (t && turno(d.hora) !== t) return false;
+    return true;
+  });
+}
+
+// Charts
+let cTurno, cSexo, cBairro, cIdade;
+const FONT = "'Barlow', sans-serif";
+const TICK = { color: '#7a8ba8', font: { family: FONT, size: 11 } };
+const GRID_CLR = 'rgba(255,255,255,0.05)';
+
+function makeCharts(data) {
+  // Turno
+  const turnos = {manha:0, tarde:0, noite:0};
+  data.forEach(d => turnos[turno(d.hora)]++);
+  if (cTurno) cTurno.destroy();
+  cTurno = new Chart(document.getElementById('chartTurno'), {
+    type: 'bar',
+    data: {
+      labels: ['Manhã (06–12h)', 'Tarde (12–18h)', 'Noite (18–00h)'],
+      datasets: [{ data: [turnos.manha, turnos.tarde, turnos.noite],
+        backgroundColor: ['rgba(59,130,246,0.7)','rgba(245,158,11,0.7)','rgba(139,92,246,0.7)'],
+        borderRadius: 6, borderSkipped: false }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false },
+      tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
+      scales: { x: { ticks: TICK, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
+        y: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } } } }
+  });
+
+  // Sexo
+  const masc = data.filter(d => d.sexo === 'M').length;
+  const fem = data.length - masc;
+  if (cSexo) cSexo.destroy();
+  cSexo = new Chart(document.getElementById('chartSexo'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Masculino', 'Feminino'],
+      datasets: [{ data: [masc, fem],
+        backgroundColor: ['rgba(59,130,246,0.75)','rgba(236,72,153,0.75)'],
+        borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: { responsive: true, cutout: '65%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#7a8ba8', font: { family: FONT }, padding: 16 } },
+        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } } }
+  });
+
+  // Bairro
+  const bairroCount = {};
+  data.forEach(d => bairroCount[d.bairro] = (bairroCount[d.bairro]||0)+1);
+  const bairroSort = Object.entries(bairroCount).sort((a,b)=>b[1]-a[1]);
+  if (cBairro) cBairro.destroy();
+  cBairro = new Chart(document.getElementById('chartBairro'), {
+    type: 'bar',
+    data: {
+      labels: bairroSort.map(e=>e[0]),
+      datasets: [{ data: bairroSort.map(e=>e[1]),
+        backgroundColor: 'rgba(6,182,212,0.65)', borderRadius: 5, borderSkipped: false }]
+    },
+    options: { indexAxis: 'y', responsive: true,
+      plugins: { legend: { display: false },
+        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
+      scales: { x: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
+        y: { ticks: { color: '#a0aec0', font: { family: FONT, size: 11 } }, grid: { display: false }, border: { color: 'transparent' } } } }
+  });
+
+  // Faixa etária
+  const faixas = {'0-17':0,'18-39':0,'40-59':0,'60+':0};
+  data.forEach(d => faixas[faixaEtaria(d.idade)]++);
+  if (cIdade) cIdade.destroy();
+  cIdade = new Chart(document.getElementById('chartIdade'), {
+    type: 'bar',
+    data: {
+      labels: ['0–17 anos','18–39 anos','40–59 anos','60+ anos'],
+      datasets: [{ data: Object.values(faixas),
+        backgroundColor: ['rgba(16,185,129,0.7)','rgba(59,130,246,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'],
+        borderRadius: 6, borderSkipped: false }]
+    },
+    options: { responsive: true,
+      plugins: { legend: { display: false },
+        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
+      scales: { x: { ticks: TICK, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
+        y: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } } } }
+  });
+}
+
+function makeTbody(data) {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  document.getElementById('semDados').style.display = data.length ? 'none' : 'block';
+  data.forEach((d,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px">${String(i+1).padStart(2,'0')}</td>
+      <td><span class="hora-tag">${d.hora}</span></td>
+      <td>${d.bairro}</td>
+      <td><span class="motivo-text" title="${d.motivo}">${d.motivo}</span></td>
+      <td><span class="idade-val">${d.idade}</span></td>
+      <td><span class="badge-sexo ${d.sexo==='M'?'badge-m':'badge-f'}">${d.sexo==='M'?'M':'F'}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateMetrics(data) {
+  const total = data.length;
+  const masc = data.filter(d=>d.sexo==='M').length;
+  const fem = total - masc;
+  const mediaIdade = total ? Math.round(data.reduce((a,d)=>a+d.idade,0)/total) : 0;
+  const horaPico = (() => {
+    const cnt = {};
+    data.forEach(d => { const h = d.hora.split(':')[0]+'h'; cnt[h]=(cnt[h]||0)+1; });
+    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
+  })();
+  document.getElementById('mTotal').textContent = total;
+  document.getElementById('mIdade').textContent = mediaIdade || '—';
+  document.getElementById('mMasc').textContent = masc;
+  document.getElementById('mFem').textContent = fem;
+  document.getElementById('mMascPct').textContent = total ? (masc/total*100).toFixed(1)+'%' : '—';
+  document.getElementById('mFemPct').textContent = total ? (fem/total*100).toFixed(1)+'%' : '—';
+  document.getElementById('mPico').textContent = horaPico;
+  document.getElementById('totalGeral').textContent = total;
+}
+
+function aplicarFiltros() {
+  const data = filtrar();
+  updateMetrics(data);
+  makeCharts(data);
+  makeTbody(data);
+}
+
+function resetFiltros() {
+  ['fBairro','fSexo','fIdade','fTurno'].forEach(id => document.getElementById(id).value = '');
+  aplicarFiltros();
+}
+
+// Init
+aplicarFiltros();
+</script>
+</body>
+</html>
