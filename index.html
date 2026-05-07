@@ -6,6 +6,8 @@
 <title>Dashboard de Atendimentos</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --bg: #0b0f1a;
@@ -309,6 +311,7 @@ tr:hover td { background: var(--surface2); }
 
   <button class="btn-reset" onclick="resetFiltros()">✕ Limpar filtros</button>
   <button class="btn-reset" onclick="document.getElementById('fileInput').click()">📁 Importar dados</button>
+  <button class="btn-reset" onclick="exportarPDF()">📄 Exportar PDF</button>
   <input type="file" id="fileInput" accept=".json,.csv" style="display:none" onchange="importarArquivo(this)">
 </div>
 
@@ -672,6 +675,89 @@ function aplicarFiltros() {
   updateMetrics(data);
   makeCharts(data);
   makeTbody(data);
+}
+
+async function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const data = filtrar();
+  const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+  // Título
+  pdf.setFontSize(18);
+  pdf.text('Dashboard de Atendimentos', 15, 20);
+  pdf.setFontSize(10);
+  pdf.setTextColor(100);
+  pdf.text(`Data do relatório: ${dataAtual} | Total de registros: ${data.length}`, 15, 28);
+
+  let yPos = 40;
+
+  // Capturar gráficos
+  const graficos = ['chartTurno', 'chartSexo', 'chartBairro', 'chartIdade'];
+  for (let i = 0; i < graficos.length; i++) {
+    const canvas = document.getElementById(graficos[i]);
+    if (canvas) {
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = 85;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      if (i % 2 === 0 && i > 0) {
+        yPos += 55;
+      }
+      const xPos = i % 2 === 0 ? 15 : 110;
+
+      if (yPos + imgHeight > 270) {
+        pdf.addPage();
+        yPos = 20;
+      }
+
+      pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight);
+    }
+  }
+
+  yPos += 60;
+
+  // Tabela de dados
+  if (yPos > 200) {
+    pdf.addPage();
+    yPos = 20;
+  }
+
+  pdf.setFontSize(12);
+  pdf.setTextColor(0);
+  pdf.text('Registros Detalhados', 15, yPos);
+  yPos += 10;
+
+  pdf.setFontSize(8);
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(15, yPos, 180, 7, 'F');
+  pdf.setTextColor(0);
+  pdf.text('#    Horário    Bairro              Motivo                          Idade  Sexo', 17, yPos + 5);
+  yPos += 10;
+
+  data.slice(0, 50).forEach((d, i) => {
+    if (yPos > 280) {
+      pdf.addPage();
+      yPos = 20;
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(15, yPos, 180, 7, 'F');
+      pdf.text('#    Horário    Bairro              Motivo                          Idade  Sexo', 17, yPos + 5);
+      yPos += 10;
+    }
+
+    const motivoTruncado = d.motivo.length > 35 ? d.motivo.substring(0, 32) + '...' : d.motivo;
+    const linha = `${String(i+1).padStart(2,'0')}   ${d.hora}      ${d.bairro.padEnd(15)}  ${motivoTruncado.padEnd(35)}  ${d.idade}     ${d.sexo}`;
+    pdf.text(linha, 17, yPos);
+    yPos += 5;
+  });
+
+  if (data.length > 50) {
+    pdf.setFontSize(8);
+    pdf.setTextColor(100);
+    pdf.text(`... e mais ${data.length - 50} registros`, 17, yPos + 5);
+  }
+
+  pdf.save(`dashboard-atendimentos-${dataAtual.replace(/\//g, '-')}.pdf`);
 }
 
 function resetFiltros() {
