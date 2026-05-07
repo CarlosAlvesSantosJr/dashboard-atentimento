@@ -303,9 +303,8 @@ tr:hover td { background: var(--surface2); }
 
   <select class="filter-select" id="fTurno" onchange="aplicarFiltros()">
     <option value="">Todos os turnos</option>
-    <option value="manha">Manhã (06h–12h)</option>
-    <option value="tarde">Tarde (12h–18h)</option>
-    <option value="noite">Noite (18h–00h)</option>
+    <option value="dia">Dia (07h–19h)</option>
+    <option value="noite">Noite (19h–07h)</option>
   </select>
 
   <button class="btn-reset" onclick="resetFiltros()">✕ Limpar filtros</button>
@@ -524,8 +523,7 @@ function atualizarFiltrosBairro() {
 
 function turno(hora) {
   const h = parseInt(hora.split(':')[0]);
-  if (h >= 6 && h < 12) return 'manha';
-  if (h >= 12 && h < 18) return 'tarde';
+  if (h >= 7 && h < 19) return 'dia';
   return 'noite';
 }
 
@@ -558,15 +556,15 @@ const GRID_CLR = 'rgba(255,255,255,0.05)';
 
 function makeCharts(data) {
   // Turno
-  const turnos = {manha:0, tarde:0, noite:0};
+  const turnos = {dia:0, noite:0};
   data.forEach(d => turnos[turno(d.hora)]++);
   if (cTurno) cTurno.destroy();
   cTurno = new Chart(document.getElementById('chartTurno'), {
     type: 'bar',
     data: {
-      labels: ['Manhã (06–12h)', 'Tarde (12–18h)', 'Noite (18–00h)'],
-      datasets: [{ data: [turnos.manha, turnos.tarde, turnos.noite],
-        backgroundColor: ['rgba(59,130,246,0.7)','rgba(245,158,11,0.7)','rgba(139,92,246,0.7)'],
+      labels: ['Dia (07–19h)', 'Noite (19–07h)'],
+      datasets: [{ data: [turnos.dia, turnos.noite],
+        backgroundColor: ['rgba(59,130,246,0.7)','rgba(139,92,246,0.7)'],
         borderRadius: 6, borderSkipped: false }]
     },
     options: { responsive: true, plugins: { legend: { display: false },
