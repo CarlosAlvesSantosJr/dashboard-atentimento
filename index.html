@@ -309,6 +309,8 @@ tr:hover td { background: var(--surface2); }
   </select>
 
   <button class="btn-reset" onclick="resetFiltros()">✕ Limpar filtros</button>
+  <button class="btn-reset" onclick="document.getElementById('fileInput').click()">📁 Importar dados</button>
+  <input type="file" id="fileInput" accept=".json,.csv" style="display:none" onchange="importarArquivo(this)">
 </div>
 
 <div class="main">
@@ -390,7 +392,8 @@ tr:hover td { background: var(--surface2); }
 </div><!-- /main -->
 
 <script>
-const DADOS = [
+// Dados iniciais (podem ser substituídos via importação)
+let DADOS = [
   {hora:"08:55",bairro:"Centro",motivo:"Queda da própria altura, não consegue deambular, confusão mental",idade:56,sexo:"M"},
   {hora:"07:20",bairro:"Vila Nova",motivo:"Dor torácica intensa com irradiação para braço esquerdo",idade:62,sexo:"M"},
   {hora:"08:15",bairro:"Jardim América",motivo:"Crise convulsiva em via pública",idade:24,sexo:"F"},
@@ -409,6 +412,81 @@ const DADOS = [
   {hora:"21:40",bairro:"Aeroporto",motivo:"Crise de ansiedade com hiperventilação",idade:27,sexo:"F"},
   {hora:"22:10",bairro:"Centro",motivo:"Agressão física com trauma cranioencefálico leve",idade:33,sexo:"M"},
 ];
+
+// Importação de dados
+function importarArquivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const conteudo = e.target.result;
+      let novosDados;
+
+      if (file.name.endsWith('.csv')) {
+        novosDados = parseCSV(conteudo);
+      } else {
+        novosDados = JSON.parse(conteudo);
+      }
+
+      if (!Array.isArray(novosDados) || novosDados.length === 0) {
+        throw new Error('O arquivo não contém um array válido de registros');
+      }
+
+      // Validar estrutura mínima
+      const registro = novosDados[0];
+      if (!registro.hora || !registro.bairro || !registro.motivo || registro.idade === undefined || !registro.sexo) {
+        throw new Error('Os registros devem conter: hora, bairro, motivo, idade, sexo');
+      }
+
+      DADOS = novosDados;
+      atualizarFiltrosBairro();
+      aplicarFiltros();
+      alert(`${novosDados.length} registros importados com sucesso!`);
+    } catch (err) {
+      alert('Erro ao importar arquivo: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(csv) {
+  const linhas = csv.trim().split('\n');
+  if (linhas.length < 2) throw new Error('CSV vazio ou sem cabeçalho');
+
+  const cabecalho = linhas[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  const idxHora = cabecalho.indexOf('hora');
+  const idxBairro = cabecalho.indexOf('bairro');
+  const idxMotivo = cabecalho.indexOf('motivo');
+  const idxIdade = cabecalho.indexOf('idade');
+  const idxSexo = cabecalho.indexOf('sexo');
+
+  if (idxHora === -1 || idxBairro === -1 || idxMotivo === -1 || idxIdade === -1 || idxSexo === -1) {
+    throw new Error('CSV deve conter colunas: hora, bairro, motivo, idade, sexo');
+  }
+
+  return linhas.slice(1).map(linha => {
+    const valores = linha.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+    return {
+      hora: valores[idxHora],
+      bairro: valores[idxBairro],
+      motivo: valores[idxMotivo],
+      idade: parseInt(valores[idxIdade]),
+      sexo: valores[idxSexo].toUpperCase()
+    };
+  }).filter(d => d.hora && d.bairro);
+}
+
+function atualizarFiltrosBairro() {
+  const bairros = [...new Set(DADOS.map(d => d.bairro))].sort();
+  const select = document.getElementById('fBairro');
+  const valorAtual = select.value;
+  select.innerHTML = '<option value="">Todos os bairros</option>' +
+    bairros.map(b => `<option>${b}</option>`).join('');
+  select.value = bairros.includes(valorAtual) ? valorAtual : '';
+}
 
 function turno(hora) {
   const h = parseInt(hora.split(':')[0]);
