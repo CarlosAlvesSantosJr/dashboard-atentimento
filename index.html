@@ -823,8 +823,12 @@ async function exportarPDF() {
 }
 
 function resetFiltros() {
-  ['fBairro','fSexo','fIdade','fTurno'].forEach(id => document.getElementById(id).value = '');
-  aplicarFiltros();
+  const filtros = ['fBairro','fSexo','fIdade','fTurno'];
+  filtros.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  setTimeout(() => aplicarFiltros(), 0);
 }
 
 // Init
