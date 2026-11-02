@@ -1,0 +1,8 @@
+services:
+  samu-dashboard:
+    build: .
+    image: samu-dashboard:latest
+    container_name: samu-dashboard
+    ports:
+      - "${PORTA:-8080}:80"
+    restart: unless-stopped

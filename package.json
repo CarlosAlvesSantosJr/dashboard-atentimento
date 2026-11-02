@@ -1,0 +1,13 @@
+{
+  "name": "samu-dashboard-atendimento",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Painel estatístico de atendimentos do SAMU 192",
+  "scripts": {
+    "start": "node tests/server.js",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}

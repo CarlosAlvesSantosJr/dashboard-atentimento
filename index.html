@@ -3,27 +3,30 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dashboard de Atendimentos</title>
+<title>SAMU 192 · Painel de Atendimentos</title>
+<link rel="icon" href="assets/samu-logo.jpg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="assets/samu-img.js"></script>
 <style>
 :root {
-  --bg: #0b0f1a;
-  --surface: #131929;
-  --surface2: #1a2236;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #e8edf5;
-  --muted: #7a8ba8;
-  --accent: #3b82f6;
-  --accent2: #06b6d4;
-  --red: #ef4444;
-  --green: #10b981;
-  --amber: #f59e0b;
-  --purple: #8b5cf6;
-  --pink: #ec4899;
+  --navy: #0d2137;
+  --navy2: #16324f;
+  --red: #d32f2f;
+  --red-soft: #fdecec;
+  --orange: #f26b21;
+  --orange-soft: #fff1e8;
+  --blue: #2f6fb3;
+  --pink: #c2417a;
+  --green: #2e9d6a;
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --border: #e3e8ef;
+  --text: #1c2b3a;
+  --muted: #6b7a8c;
+  --shadow: 0 1px 2px rgba(13,33,55,.05), 0 4px 16px rgba(13,33,55,.06);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -31,808 +34,1344 @@ body {
   color: var(--text);
   font-family: 'Barlow', sans-serif;
   min-height: 100vh;
-  padding: 0;
 }
+button, input, select { font-family: inherit; }
+[hidden] { display: none !important; }
 
-/* ── HEADER ── */
-.header {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-  border-bottom: 1px solid var(--border2);
-  padding: 24px 32px 20px;
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 220px;
+  background:
+    linear-gradient(90deg, rgba(13,33,55,0) 0, rgba(13,33,55,0) 200px, rgba(13,33,55,.7) 300px, var(--navy) 380px),
+    url('assets/samu.jpg') left center / auto 100% no-repeat,
+    var(--navy);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 28px 40px;
+  border-bottom: 4px solid var(--orange);
 }
-.header-left .badge {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--accent2);
-  background: rgba(6,182,212,0.12);
-  border: 1px solid rgba(6,182,212,0.25);
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-bottom: 8px;
+.hero-content { max-width: 560px; color: #fff; text-align: right; }
+.hero-badge {
   display: inline-block;
-}
-.header-left h1 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #fff;
-}
-.header-left p {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-.header-right {
   font-family: 'DM Mono', monospace;
   font-size: 11px;
-  color: var(--muted);
-  text-align: right;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffd2b8;
+  background: rgba(242,107,33,.18);
+  border: 1px solid rgba(242,107,33,.45);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
 }
-.header-right span {
-  display: block;
-  font-size: 20px;
-  color: var(--accent);
-  font-weight: 500;
+.hero h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: .5px;
 }
+.hero p { color: #b9c7d8; font-size: 15px; margin-top: 6px; }
+.hero-total {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #b9c7d8;
+}
+.hero-total strong { font-size: 30px; color: #fff; font-weight: 500; }
 
-/* ── FILTERS ── */
-.filters-bar {
+/* ── TOOLBAR ── */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 14px 32px;
+  box-shadow: 0 2px 8px rgba(13,33,55,.04);
+  padding: 12px 40px;
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
   align-items: center;
 }
-.filter-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-right: 4px;
-}
-.filter-select {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  padding: 7px 12px;
-  font-size: 13px;
-  font-family: 'Barlow', sans-serif;
-  cursor: pointer;
-  outline: none;
-  transition: border-color .2s;
-}
-.filter-select:focus { border-color: var(--accent); }
-.btn-reset {
-  margin-left: auto;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  padding: 7px 16px;
-  font-size: 12px;
-  font-family: 'Barlow', sans-serif;
-  cursor: pointer;
-  transition: all .2s;
-}
-.btn-reset:hover { color: var(--text); border-color: var(--accent); }
-
-/* ── MAIN ── */
-.main { padding: 24px 32px 40px; }
-
-/* ── METRICS ── */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
-  margin-bottom: 24px;
-}
-.metric {
-  background: var(--surface);
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px 20px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color .2s;
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 9px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .05s;
+  white-space: nowrap;
 }
-.metric:hover { border-color: var(--border2); }
-.metric::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
+.btn:hover { background: #f5f7fa; border-color: #cfd7e2; }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 3px solid rgba(242,107,33,.35); outline-offset: 1px; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
+.btn-primary:hover { background: #b92626; border-color: #b92626; }
+.btn-orange { background: var(--orange); border-color: var(--orange); color: #fff; }
+.btn-orange:hover { background: #db5c15; border-color: #db5c15; }
+.btn-ghost { border-color: transparent; color: var(--muted); }
+.btn-danger-ghost { border-color: transparent; color: var(--red); }
+.btn-danger-ghost:hover { background: var(--red-soft); border-color: transparent; }
+.toolbar .spacer { flex: 1; }
+
+/* ── FILTERS ── */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 18px 40px 0;
 }
-.metric:nth-child(1)::before { background: var(--accent); }
-.metric:nth-child(2)::before { background: var(--accent2); }
-.metric:nth-child(3)::before { background: var(--green); }
-.metric:nth-child(4)::before { background: var(--amber); }
-.metric:nth-child(5)::before { background: var(--purple); }
-.metric-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 8px;
 }
-.metric-value {
-  font-size: 30px;
-  font-weight: 700;
-  font-family: 'Barlow Condensed', sans-serif;
-  color: #fff;
-  line-height: 1;
+.input {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 14px;
+  outline: none;
+  min-width: 140px;
+  transition: border-color .15s, box-shadow .15s;
 }
-.metric-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 5px;
-  font-family: 'DM Mono', monospace;
-}
+.input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(242,107,33,.15); }
 
-/* ── GRID ── */
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+/* ── MAIN ── */
+.main { padding: 18px 40px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+.notice {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--orange-soft);
+  border: 1px solid #f9cfb3;
+  color: #8a3b0c;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.notice.show { display: flex; }
+.notice .btn { margin-left: auto; padding: 6px 12px; font-size: 13px; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--kpi-color, var(--red));
+}
+.kpi-label { font-size: 12px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); }
+.kpi-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-top: 6px;
+  color: var(--navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpi-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.col-12 { grid-column: span 12; }
+.col-8 { grid-column: span 8; }
+.col-6 { grid-column: span 6; }
+.col-4 { grid-column: span 4; }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px 22px;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
 }
-.card h3 {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 16px;
-}
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.card h3 { font-size: 16px; font-weight: 600; color: var(--navy); }
+.card .hint { font-size: 12px; color: var(--muted); }
+.chart-box { position: relative; height: 260px; }
+.chart-box.tall { height: 320px; }
 
 /* ── TABLE ── */
-.table-wrap { overflow-x: auto; margin-bottom: 16px; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-th {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding: 10px 14px;
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th {
   text-align: left;
-  border-bottom: 1px solid var(--border2);
-}
-td {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-  vertical-align: middle;
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--surface2); }
-.badge-sexo {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
-  font-family: 'DM Mono', monospace;
-}
-.badge-m { background: rgba(59,130,246,0.15); color: #60a5fa; }
-.badge-f { background: rgba(236,72,153,0.15); color: #f472b6; }
-.hora-tag {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--accent2);
-  background: rgba(6,182,212,0.08);
-  padding: 2px 8px;
-  border-radius: 5px;
-}
-.motivo-text {
-  max-width: 280px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfd;
   white-space: nowrap;
+}
+tbody td { padding: 10px 12px; border-bottom: 1px solid #eef1f5; vertical-align: middle; }
+tbody tr:hover { background: #fafbfd; }
+.mono { font-family: 'DM Mono', monospace; font-size: 13px; }
+.tag-sexo {
+  display: inline-block;
+  min-width: 26px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.tag-m { background: #e6eff9; color: var(--blue); }
+.tag-f { background: #f9e6ef; color: var(--pink); }
+.row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover { background: #eef1f5; color: var(--navy); }
+.icon-btn.del:hover { background: var(--red-soft); color: var(--red); }
+.icon-btn svg { width: 16px; height: 16px; }
+.empty { text-align: center; padding: 36px; color: var(--muted); }
+.pager { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+/* ── MODAL ── */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(13,33,55,.55);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+.overlay.show { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+.modal-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  background: var(--navy);
+  color: #fff;
+}
+.modal-head img { width: 36px; height: 36px; border-radius: 50%; }
+.modal-head h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; letter-spacing: .3px; }
+.modal-head .icon-btn { margin-left: auto; color: #b9c7d8; }
+.modal-head .icon-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+.modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.modal-body .full { grid-column: span 2; }
+.modal-body .input { width: 100%; min-width: 0; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.seg input { display: none; }
+.seg label {
+  flex: 1;
+  text-align: center;
+  padding: 9px 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text);
+  transition: background .15s, color .15s;
 }
-.idade-val {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
+.seg label + input + label, .seg input + label ~ label { border-left: 1px solid var(--border); }
+.seg input:checked + label.m { background: var(--blue); color: #fff; }
+.seg input:checked + label.f { background: var(--pink); color: #fff; }
+.check-obito {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .15s, border-color .15s;
 }
+.check-obito input { width: 18px; height: 18px; accent-color: var(--red); cursor: pointer; }
+.check-obito strong { font-weight: 600; }
+.check-obito small { color: var(--muted); font-size: 12px; margin-left: auto; }
+.check-obito:has(input:checked) { background: var(--red-soft); border-color: #f2b8b8; color: var(--red); }
+.tag-obito { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 6px; background: #2b2b2b; color: #fff; }
+.err { color: var(--red); font-size: 13px; min-height: 18px; grid-column: span 2; }
+.import-opts { padding: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--muted); }
+.import-opts strong { color: var(--text); }
 
-/* ── HIDDEN ROWS ── */
-.row-hidden { display: none; }
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--navy);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  z-index: 60;
+  max-width: calc(100% - 32px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--red); }
 
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .metrics { grid-template-columns: repeat(2,1fr); }
-  .grid2, .grid3 { grid-template-columns: 1fr; }
-  .header { flex-direction: column; gap: 10px; }
+@media (max-width: 1000px) {
+  .col-8, .col-6, .col-4 { grid-column: span 12; }
+}
+@media (max-width: 700px) {
+  .hero { padding: 20px 16px; min-height: 180px; background-size: auto, auto 70%, auto; background-position: 0 0, left top, 0 0; align-items: flex-end; }
+  .hero h1 { font-size: 30px; }
+  .toolbar, .filters, .main { padding-left: 16px; padding-right: 16px; }
+  .toolbar .spacer { display: none; }
+  .filters .field { flex: 1 1 140px; }
+  .input { min-width: 0; }
+  .modal-body { grid-template-columns: 1fr; }
+  .modal-body .full, .err { grid-column: span 1; }
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left">
-    <div class="badge">Central de Regulação Médica</div>
-    <h1>Dashboard de Atendimentos</h1>
-    <p>Registro de ocorrências · Análise por horário, bairro, motivo, idade e sexo</p>
+<header class="hero">
+  <div class="hero-content">
+    <span class="hero-badge">Serviço de Atendimento Móvel de Urgência</span>
+    <h1>Painel Estatístico de Atendimentos</h1>
+    <p id="heroPeriodo">Ocorrências registradas</p>
+    <div class="hero-total"><strong id="heroTotal">0</strong> atendimentos no período</div>
   </div>
-  <div class="header-right">
-    Total de registros<span id="totalGeral">17</span>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="abrirForm()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Novo atendimento
+  </button>
+  <button class="btn" onclick="document.getElementById('fileInput').click()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    Importar
+  </button>
+  <button class="btn" onclick="exportarCSV()" title="Planilha para editar no Excel e importar de volta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    Exportar planilha
+  </button>
+  <button class="btn btn-orange" onclick="exportarPDF()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg>
+    Exportar PDF
+  </button>
+  <span class="spacer"></span>
+  <button class="btn btn-danger-ghost" onclick="limparTudo()">Apagar todos os dados</button>
+  <input type="file" id="fileInput" accept=".json,.csv,.txt" hidden onchange="lerArquivo(this)">
+</div>
+
+<div class="filters">
+  <div class="field">
+    <label for="fIni">De</label>
+    <input class="input" type="date" id="fIni" onchange="render()">
+  </div>
+  <div class="field">
+    <label for="fFim">Até</label>
+    <input class="input" type="date" id="fFim" onchange="render()">
+  </div>
+  <div class="field">
+    <label for="fBairro">Bairro</label>
+    <select class="input" id="fBairro" onchange="render()"></select>
+  </div>
+  <div class="field">
+    <label for="fSexo">Sexo</label>
+    <select class="input" id="fSexo" onchange="render()">
+      <option value="">Todos</option>
+      <option value="M">Masculino</option>
+      <option value="F">Feminino</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="fIdade">Faixa etária</label>
+    <select class="input" id="fIdade" onchange="render()"></select>
+  </div>
+  <div class="field">
+    <label for="fEsp">Especialidade</label>
+    <select class="input" id="fEsp" onchange="render()"></select>
+  </div>
+  <div class="field">
+    <label for="fObito">Óbito</label>
+    <select class="input" id="fObito" onchange="render()" style="min-width:110px">
+      <option value="">Todos</option>
+      <option value="sim">Com óbito</option>
+      <option value="nao">Sem óbito</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="fTurno">Turno</label>
+    <select class="input" id="fTurno" onchange="render()">
+      <option value="">Todos</option>
+      <option value="dia">Dia (07h–19h)</option>
+      <option value="noite">Noite (19h–07h)</option>
+    </select>
+  </div>
+  <button class="btn btn-ghost" onclick="resetFiltros()">✕ Limpar filtros</button>
+</div>
+
+<main class="main">
+
+  <div class="notice" id="notice">
+    <span>Você está vendo <strong>dados de exemplo</strong>. Cadastre os atendimentos do dia ou importe uma planilha.</span>
+    <button class="btn" onclick="removerExemplos()">Remover exemplos</button>
+  </div>
+
+  <section class="kpis">
+    <div class="kpi" style="--kpi-color: var(--red)">
+      <div class="kpi-label">Atendimentos</div>
+      <div class="kpi-value" id="kTotal">0</div>
+      <div class="kpi-sub" id="kDias">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #2b2b2b">
+      <div class="kpi-label">Óbitos</div>
+      <div class="kpi-value" id="kObitos">0</div>
+      <div class="kpi-sub" id="kObitosSub">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--navy2)">
+      <div class="kpi-label">Idade média</div>
+      <div class="kpi-value" id="kIdade">—</div>
+      <div class="kpi-sub" id="kIdadeRange">anos</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--orange)">
+      <div class="kpi-label">Horário de pico</div>
+      <div class="kpi-value" id="kPico">—</div>
+      <div class="kpi-sub" id="kPicoSub">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--orange)">
+      <div class="kpi-label">Dia da semana de pico</div>
+      <div class="kpi-value" id="kSemana" style="font-size:28px;padding-top:6px">—</div>
+      <div class="kpi-sub" id="kSemanaSub">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--red)">
+      <div class="kpi-label">Bairro mais atendido</div>
+      <div class="kpi-value" id="kBairro" style="font-size:28px;padding-top:6px">—</div>
+      <div class="kpi-sub" id="kBairroSub">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: var(--blue)">
+      <div class="kpi-label">Especialidade principal</div>
+      <div class="kpi-value" id="kEsp" style="font-size:28px;padding-top:6px">—</div>
+      <div class="kpi-sub" id="kEspSub">—</div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card col-8">
+      <div class="card-head"><h3>Horários de pico</h3><span class="hint"><span style="color:var(--orange)">■</span> dia &nbsp; <span style="color:var(--navy2)">■</span> noite</span></div>
+      <div class="chart-box"><canvas id="chartHora"></canvas></div>
+    </div>
+    <div class="card col-4">
+      <div class="card-head"><h3>Ocorrências por dia da semana</h3></div>
+      <div class="chart-box"><canvas id="chartSemana"></canvas></div>
+    </div>
+    <div class="card col-12">
+      <div class="card-head"><h3>Atendimentos por faixa etária</h3><span class="hint"><span style="color:var(--red)">■</span> neonatal (0–1) &nbsp; <span style="color:var(--orange)">■</span> 2–5 anos &nbsp; <span style="color:var(--navy2)">■</span> a cada 5 anos</span></div>
+      <div class="chart-box"><canvas id="chartIdade"></canvas></div>
+    </div>
+    <div class="card col-6">
+      <div class="card-head"><h3>Atendimentos por bairro</h3><span class="hint">10 bairros com mais ocorrências</span></div>
+      <div class="chart-box tall"><canvas id="chartBairro"></canvas></div>
+    </div>
+    <div class="card col-6">
+      <div class="card-head"><h3>Especialidades</h3><span class="hint"><span style="color:var(--blue)">■</span> atendimentos &nbsp; <span style="color:#2b2b2b">■</span> óbitos</span></div>
+      <div class="chart-box tall"><canvas id="chartEsp"></canvas></div>
+    </div>
+    <div class="card col-4">
+      <div class="card-head"><h3>Óbitos</h3></div>
+      <div class="chart-box"><canvas id="chartObito"></canvas></div>
+    </div>
+    <div class="card col-4">
+      <div class="card-head"><h3>Distribuição por sexo</h3></div>
+      <div class="chart-box"><canvas id="chartSexo"></canvas></div>
+    </div>
+    <div class="card col-4">
+      <div class="card-head"><h3>Atendimentos por dia</h3><span class="hint">evolução no período</span></div>
+      <div class="chart-box"><canvas id="chartDia"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h3>Registros de atendimento</h3>
+      <input class="input" id="busca" type="search" placeholder="Buscar bairro ou especialidade…" oninput="pagina=0; renderTabela()" style="max-width:260px">
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Horário</th>
+            <th>Bairro</th>
+            <th>Idade</th>
+            <th>Sexo</th>
+            <th>Motivo / especialidade</th>
+            <th>Óbito</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="semDados" hidden>Nenhum atendimento encontrado para os filtros selecionados.</div>
+    <div class="pager" id="pager"></div>
+  </section>
+
+</main>
+
+<!-- MODAL: cadastro / edição -->
+<div class="overlay" id="ovForm" onclick="if(event.target===this) fecharForm()">
+  <form class="modal" id="form" onsubmit="salvarForm(event)" autocomplete="off">
+    <div class="modal-head">
+      <img src="assets/samu-logo.jpg" alt="">
+      <h2 id="formTitulo">Novo atendimento</h2>
+      <button type="button" class="icon-btn" onclick="fecharForm()" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="iId">
+      <div class="field">
+        <label for="iData">Data</label>
+        <input class="input" type="date" id="iData" required>
+      </div>
+      <div class="field">
+        <label for="iHora">Horário da ocorrência</label>
+        <input class="input" type="time" id="iHora" required>
+      </div>
+      <div class="field full">
+        <label for="iBairro">Bairro</label>
+        <input class="input" id="iBairro" list="listaBairros" placeholder="Digite ou selecione o bairro" required>
+        <datalist id="listaBairros"></datalist>
+      </div>
+      <div class="field">
+        <label for="iIdade">Idade</label>
+        <input class="input" type="number" id="iIdade" min="0" max="120" placeholder="anos" required>
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <div class="seg">
+          <input type="radio" name="iSexo" id="iSexoM" value="M"><label for="iSexoM" class="m">Masculino</label>
+          <input type="radio" name="iSexo" id="iSexoF" value="F"><label for="iSexoF" class="f">Feminino</label>
+        </div>
+      </div>
+      <div class="field full">
+        <label for="iMotivo">Motivo / Especialidade</label>
+        <input class="input" id="iMotivo" list="listaMotivos" placeholder="Ex.: Clínico, Trauma, Cardiológico, Obstétrico…">
+        <datalist id="listaMotivos"></datalist>
+      </div>
+      <label class="check-obito full" for="iObito">
+        <input type="checkbox" id="iObito">
+        <strong>Óbito</strong>
+        <small>marque se o paciente evoluiu a óbito</small>
+      </label>
+      <div class="err" id="formErro"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" onclick="fecharForm()">Cancelar</button>
+      <button type="submit" class="btn" id="btnSalvarOutro" onclick="salvarEOutro=true">Salvar e cadastrar outro</button>
+      <button type="submit" class="btn btn-primary" onclick="salvarEOutro=false">Salvar</button>
+    </div>
+  </form>
+</div>
+
+<!-- MODAL: importação -->
+<div class="overlay" id="ovImport" onclick="if(event.target===this) fecharImport()">
+  <div class="modal">
+    <div class="modal-head">
+      <img src="assets/samu-logo.jpg" alt="">
+      <h2>Importar atendimentos</h2>
+      <button type="button" class="icon-btn" onclick="fecharImport()" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="import-opts" id="importResumo"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="fecharImport()">Cancelar</button>
+      <button class="btn" onclick="confirmarImport('substituir')">Substituir todos os dados</button>
+      <button class="btn btn-primary" onclick="confirmarImport('mesclar')">Adicionar aos dados atuais</button>
+    </div>
   </div>
 </div>
 
-<div class="filters-bar">
-  <span class="filter-label">Filtros</span>
-
-  <select class="filter-select" id="fBairro" onchange="aplicarFiltros()">
-    <option value="">Todos os bairros</option>
-    <option>Aeroporto</option><option>Bela Vista</option><option>Campestre</option>
-    <option>Centro</option><option>Dehon</option><option>Humaitá</option>
-    <option>Industrial</option><option>Jardim América</option><option>Monte Castelo</option>
-    <option>Oficinas</option><option>Passagem</option><option>Recife</option>
-    <option>Santo Antônio</option><option>São Cristóvão</option><option>Vila Nova</option>
-  </select>
-
-  <select class="filter-select" id="fSexo" onchange="aplicarFiltros()">
-    <option value="">Todos os sexos</option>
-    <option value="M">Masculino</option>
-    <option value="F">Feminino</option>
-  </select>
-
-  <select class="filter-select" id="fIdade" onchange="aplicarFiltros()">
-    <option value="">Todas as idades</option>
-    <option value="0-17">0 – 17 anos (criança/adolescente)</option>
-    <option value="18-39">18 – 39 anos (adulto jovem)</option>
-    <option value="40-59">40 – 59 anos (adulto)</option>
-    <option value="60+">60+ anos (idoso)</option>
-  </select>
-
-  <select class="filter-select" id="fTurno" onchange="aplicarFiltros()">
-    <option value="">Todos os turnos</option>
-    <option value="dia">Dia (07h–19h)</option>
-    <option value="noite">Noite (19h–07h)</option>
-  </select>
-
-  <button class="btn-reset" onclick="resetFiltros()">✕ Limpar filtros</button>
-  <button class="btn-reset" onclick="document.getElementById('fileInput').click()">📁 Importar dados</button>
-  <button class="btn-reset" onclick="exportarPDF()">📄 Exportar PDF</button>
-  <input type="file" id="fileInput" accept=".json,.csv" style="display:none" onchange="importarArquivo(this)">
-</div>
-
-<div class="main">
-
-  <!-- MÉTRICAS -->
-  <div class="metrics">
-    <div class="metric">
-      <div class="metric-label">Total filtrado</div>
-      <div class="metric-value" id="mTotal">17</div>
-      <div class="metric-sub">ocorrências</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Média de idade</div>
-      <div class="metric-value" id="mIdade">39</div>
-      <div class="metric-sub">anos</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Masculino</div>
-      <div class="metric-value" id="mMasc">9</div>
-      <div class="metric-sub" id="mMascPct">52.9%</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Feminino</div>
-      <div class="metric-value" id="mFem">8</div>
-      <div class="metric-sub" id="mFemPct">47.1%</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Pico de chamadas</div>
-      <div class="metric-value" id="mPico">08h</div>
-      <div class="metric-sub">horário</div>
-    </div>
-  </div>
-
-  <!-- GRÁFICOS LINHA 1 -->
-  <div class="grid2">
-    <div class="card">
-      <h3>Atendimentos por turno do dia</h3>
-      <canvas id="chartTurno" height="180"></canvas>
-    </div>
-    <div class="card">
-      <h3>Distribuição por sexo</h3>
-      <canvas id="chartSexo" height="180"></canvas>
-    </div>
-  </div>
-
-  <!-- GRÁFICOS LINHA 2 -->
-  <div class="grid2">
-    <div class="card">
-      <h3>Atendimentos por bairro</h3>
-      <canvas id="chartBairro" height="220"></canvas>
-    </div>
-    <div class="card">
-      <h3>Distribuição por faixa etária</h3>
-      <canvas id="chartIdade" height="220"></canvas>
-    </div>
-  </div>
-
-  <!-- TABELA COMPLETA -->
-  <div class="card table-wrap">
-    <h3>Registros detalhados</h3>
-    <table id="tabelaPrincipal">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Horário</th>
-          <th>Bairro</th>
-          <th>Motivo da Ativação</th>
-          <th>Idade</th>
-          <th>Sexo</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="semDados" style="display:none;text-align:center;padding:32px;color:var(--muted);font-family:'DM Mono',monospace;font-size:13px;">
-      Nenhum registro encontrado para os filtros selecionados.
-    </div>
-  </div>
-
-</div><!-- /main -->
+<div class="toast" id="toast"></div>
 
 <script>
-// Dados iniciais (podem ser substituídos via importação)
-let DADOS = [
-[
-  {hora:"06:12",bairro:"Centro",motivo:"Dor torácica intensa",idade:56,sexo:"M"},
-  {hora:"07:34",bairro:"Vila Nova",motivo:"Fratura no braço",idade:24,sexo:"F"},
-  {hora:"08:05",bairro:"Jardim América",motivo:"Crise hipertensiva",idade:68,sexo:"M"},
-  {hora:"08:22",bairro:"Bela Vista",motivo:"Acidente de trânsito",idade:31,sexo:"M"},
-  {hora:"09:01",bairro:"Santana",motivo:"Crise convulsiva",idade:19,sexo:"F"},
-  {hora:"09:45",bairro:"Pinheiros",motivo:"Dificuldade respiratória",idade:74,sexo:"F"},
-  {hora:"10:10",bairro:"Moema",motivo:"Queimadura grave",idade:45,sexo:"M"},
-  {hora:"10:33",bairro:"Liberdade",motivo:"Queda de altura",idade:38,sexo:"M"},
-  {hora:"11:02",bairro:"Tatuapé",motivo:"Reação alérgica severa",idade:27,sexo:"F"},
-  {hora:"11:20",bairro:"Ipiranga",motivo:"AVC suspeito",idade:82,sexo:"F"},
-  {hora:"11:55",bairro:"Brooklin",motivo:"Intoxicação alimentar",idade:33,sexo:"M"},
-  {hora:"12:14",bairro:"Lapa",motivo:"Dor abdominal aguda",idade:50,sexo:"F"},
-  {hora:"12:40",bairro:"Vila Mariana",motivo:"Infarto suspeito",idade:61,sexo:"M"},
-  {hora:"13:05",bairro:"Perdizes",motivo:"Fratura no tornozelo",idade:29,sexo:"F"},
-  {hora:"13:22",bairro:"Consolação",motivo:"Crise de ansiedade severa",idade:22,sexo:"F"},
-  {hora:"13:50",bairro:"Bom Retiro",motivo:"Trauma craniano",idade:44,sexo:"M"},
-  {hora:"14:07",bairro:"Santa Cecília",motivo:"Sangramento intenso",idade:36,sexo:"F"},
-  {hora:"14:30",bairro:"Água Branca",motivo:"Dor torácica intensa",idade:53,sexo:"M"},
-  {hora:"14:55",bairro:"Higienópolis",motivo:"Hipoglicemia grave",idade:70,sexo:"F"},
-  {hora:"15:18",bairro:"Vila Leopoldina",motivo:"Acidente de trabalho",idade:41,sexo:"M"},
-  {hora:"15:35",bairro:"Jabaquara",motivo:"Crise hipertensiva",idade:65,sexo:"F"},
-  {hora:"16:00",bairro:"Saúde",motivo:"Fratura na perna",idade:17,sexo:"M"},
-  {hora:"16:22",bairro:"Cursino",motivo:"Dificuldade respiratória",idade:78,sexo:"M"},
-  {hora:"16:48",bairro:"Mooca",motivo:"Queimadura por produto químico",idade:35,sexo:"M"},
-  {hora:"17:03",bairro:"Belém",motivo:"Reação alérgica severa",idade:26,sexo:"F"},
-  {hora:"17:25",bairro:"Penha",motivo:"Dor abdominal aguda",idade:48,sexo:"F"},
-  {hora:"17:50",bairro:"Aricanduva",motivo:"Trauma na coluna",idade:55,sexo:"M"},
-  {hora:"18:12",bairro:"Itaquera",motivo:"AVC suspeito",idade:72,sexo:"F"},
-  {hora:"18:30",bairro:"Guaianases",motivo:"Intoxicação por medicamento",idade:14,sexo:"F"},
-  {hora:"18:55",bairro:"São Miguel",motivo:"Infarto suspeito",idade:60,sexo:"M"},
-  {hora:"19:10",bairro:"Ermelino Matarazzo",motivo:"Queimadura grave",idade:43,sexo:"M"},
-  {hora:"19:35",bairro:"Itaim Paulista",motivo:"Crise convulsiva",idade:21,sexo:"M"},
-  {hora:"20:00",bairro:"Parque do Carmo",motivo:"Fratura no quadril",idade:85,sexo:"F"},
-  {hora:"20:18",bairro:"Vila Formosa",motivo:"Acidente de trânsito",idade:30,sexo:"F"},
-  {hora:"20:42",bairro:"Água Rasa",motivo:"Dor torácica intensa",idade:59,sexo:"M"},
-  {hora:"21:05",bairro:"Carrão",motivo:"Sangramento intenso",idade:37,sexo:"F"},
-  {hora:"21:28",bairro:"Vila Prudente",motivo:"Hipoglicemia grave",idade:67,sexo:"M"},
-  {hora:"21:50",bairro:"Sacomã",motivo:"Trauma craniano",idade:25,sexo:"M"},
-  {hora:"22:10",bairro:"Alto do Ipiranga",motivo:"Queda de altura",idade:40,sexo:"F"},
-  {hora:"22:35",bairro:"Jardim São Luís",motivo:"Crise de ansiedade severa",idade:18,sexo:"F"},
-  {hora:"22:58",bairro:"Campo Limpo",motivo:"AVC suspeito",idade:79,sexo:"M"},
-  {hora:"23:15",bairro:"Vila Andrade",motivo:"Dificuldade respiratória",idade:71,sexo:"F"},
-  {hora:"23:35",bairro:"Capão Redondo",motivo:"Intoxicação alimentar",idade:32,sexo:"M"},
-  {hora:"23:55",bairro:"Pirambóia",motivo:"Crise hipertensiva",idade:64,sexo:"F"},
-  {hora:"00:20",bairro:"Santo Amaro",motivo:"Infarto suspeito",idade:57,sexo:"M"},
-  {hora:"00:45",bairro:"Americanópolis",motivo:"Fratura no braço",idade:28,sexo:"F"},
-  {hora:"01:10",bairro:"Cidade Ademar",motivo:"Acidente de trânsito",idade:23,sexo:"M"},
-  {hora:"01:38",bairro:"Pedreira",motivo:"Dor abdominal aguda",idade:46,sexo:"F"},
-  {hora:"02:15",bairro:"Grajaú",motivo:"Trauma na coluna",idade:39,sexo:"M"},
-  {hora:"03:02",bairro:"Marsilac",motivo:"Queimadura grave",idade:52,sexo:"F"}
-]];
+// ───────────────────────── Armazenamento ─────────────────────────
+const STORAGE_KEY = 'samu_atendimentos_v1';
+const CAMPOS = ['data', 'hora', 'bairro', 'idade', 'sexo', 'motivo', 'obito'];
+const CABECALHO_CSV = { motivo: 'especialidade' };
+let DADOS = [];
+let EXEMPLO = false;
 
-// Importação de dados
-function importarArquivo(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const conteudo = e.target.result;
-      let novosDados;
-
-      if (file.name.endsWith('.csv')) {
-        novosDados = parseCSV(conteudo);
-      } else {
-        novosDados = JSON.parse(conteudo);
-      }
-
-      if (!Array.isArray(novosDados) || novosDados.length === 0) {
-        throw new Error('O arquivo não contém um array válido de registros');
-      }
-
-      // Validar estrutura mínima
-      const registro = novosDados[0];
-      if (!registro.hora || !registro.bairro || !registro.motivo || registro.idade === undefined || !registro.sexo) {
-        throw new Error('Os registros devem conter: hora, bairro, motivo, idade, sexo');
-      }
-
-      DADOS = novosDados;
-      atualizarFiltrosBairro();
-      aplicarFiltros();
-      alert(`${novosDados.length} registros importados com sucesso!`);
-    } catch (err) {
-      alert('Erro ao importar arquivo: ' + err.message);
-    }
-    input.value = '';
-  };
-  reader.readAsText(file);
-}
-
-function parseCSV(csv) {
-  const linhas = csv.trim().split('\n');
-  if (linhas.length < 2) throw new Error('CSV vazio ou sem cabeçalho');
-
-  const cabecalho = linhas[0].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-  const idxHora = cabecalho.indexOf('hora');
-  const idxBairro = cabecalho.indexOf('bairro');
-  const idxMotivo = cabecalho.indexOf('motivo');
-  const idxIdade = cabecalho.indexOf('idade');
-  const idxSexo = cabecalho.indexOf('sexo');
-
-  if (idxHora === -1 || idxBairro === -1 || idxMotivo === -1 || idxIdade === -1 || idxSexo === -1) {
-    throw new Error('CSV deve conter colunas: hora, bairro, motivo, idade, sexo');
+function salvar() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ exemplo: EXEMPLO, registros: DADOS }));
+  } catch (e) {
+    toast('Não foi possível salvar no navegador: ' + e.message, true);
   }
-
-  return linhas.slice(1).map(linha => {
-    const valores = linha.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-    return {
-      hora: valores[idxHora],
-      bairro: valores[idxBairro],
-      motivo: valores[idxMotivo],
-      idade: parseInt(valores[idxIdade]),
-      sexo: valores[idxSexo].toUpperCase()
-    };
-  }).filter(d => d.hora && d.bairro);
 }
 
-function atualizarFiltrosBairro() {
-  const bairros = [...new Set(DADOS.map(d => d.bairro))].sort();
-  const select = document.getElementById('fBairro');
-  const valorAtual = select.value;
-  select.innerHTML = '<option value="">Todos os bairros</option>' +
-    bairros.map(b => `<option>${b}</option>`).join('');
-  select.value = bairros.includes(valorAtual) ? valorAtual : '';
+function carregar() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (salvo && Array.isArray(salvo.registros)) {
+      DADOS = salvo.registros;
+      EXEMPLO = !!salvo.exemplo;
+      return;
+    }
+  } catch (e) { /* armazenamento indisponível: usa exemplos */ }
+  DADOS = gerarExemplos();
+  EXEMPLO = true;
+  salvar();
 }
 
-function turno(hora) {
-  const h = parseInt(hora.split(':')[0]);
-  if (h >= 7 && h < 19) return 'dia';
-  return 'noite';
+function gerarExemplos() {
+  const base = [
+    ["06:12","Centro","Cardiológico",56,"M"],["07:34","Vila Nova","Trauma",24,"F"],
+    ["08:05","Jardim América","Clínico",68,"M"],["08:22","Bela Vista","Trauma",31,"M"],
+    ["09:01","Santana","Neonatal",0,"F"],["09:45","Centro","Respiratório",74,"F"],
+    ["10:10","Vila Nova","Trauma",45,"M"],["10:33","Liberdade","Trauma",38,"M"],
+    ["11:02","Santana","Pediátrico",4,"F"],["11:20","Ipiranga","Neurológico",82,"F",true],
+    ["11:55","Centro","Clínico",33,"M"],["12:14","Lapa","Obstétrico",27,"F"],
+    ["12:40","Bela Vista","Cardiológico",61,"M",true],["13:05","Jardim América","Trauma",29,"F"],
+    ["13:22","Liberdade","Psiquiátrico",22,"F"],["13:50","Centro","Trauma",44,"M"],
+    ["14:07","Vila Nova","Obstétrico",31,"F"],["14:30","Ipiranga","Cardiológico",53,"M"],
+    ["14:55","Santana","Clínico",70,"F"],["15:18","Lapa","Trauma",41,"M"],
+    ["15:35","Centro","Clínico",65,"F"],["16:00","Bela Vista","Pediátrico",8,"M"],
+    ["16:22","Vila Nova","Respiratório",78,"M",true],["17:03","Liberdade","Pediátrico",2,"F"],
+    ["17:50","Centro","Trauma",55,"M"],["18:12","Jardim América","Neurológico",72,"F"],
+    ["18:30","Santana","Psiquiátrico",14,"F"],["19:10","Ipiranga","Trauma",43,"M"],
+    ["19:35","Centro","Neurológico",21,"M"],["20:00","Lapa","Trauma",85,"F"],
+    ["20:42","Vila Nova","Cardiológico",59,"M"],["21:05","Bela Vista","Obstétrico",37,"F"],
+    ["21:50","Centro","Trauma",25,"M",true],["22:35","Liberdade","Psiquiátrico",18,"F"],
+    ["22:58","Santana","Neurológico",79,"M"],["23:35","Centro","Clínico",32,"M"],
+    ["00:20","Ipiranga","Cardiológico",57,"M"],["01:10","Vila Nova","Trauma",23,"M"],
+    ["02:15","Jardim América","Trauma",39,"M"],["03:02","Centro","Neonatal",1,"F"]
+  ];
+  return base.map((r, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (i % 7));
+    return { id: novoId(), data: isoData(d), hora: r[0], bairro: r[1], motivo: r[2], idade: r[3], sexo: r[4], obito: !!r[5] };
+  });
 }
 
-function faixaEtaria(idade) {
-  if (idade <= 17) return '0-17';
-  if (idade <= 39) return '18-39';
-  if (idade <= 59) return '40-59';
-  return '60+';
+// ───────────────────────── Utilitários ─────────────────────────
+function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function isoData(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function hoje() { return isoData(new Date()); }
+function brData(iso) { if (!iso) return '—'; const [a, m, d] = iso.split('-'); return `${d}/${m}/${a}`; }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function semAcento(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+function horaNum(hora) { return parseInt(String(hora).split(':')[0], 10); }
+function turno(hora) { const h = horaNum(hora); return h >= 7 && h < 19 ? 'dia' : 'noite'; }
+// 0–1 (neonatal), 2–5 e depois de 5 em 5 anos até 90+
+const FAIXAS = (() => {
+  const f = [{ id: '0-1', rotulo: '0–1 neo', min: 0, max: 1 }, { id: '2-5', rotulo: '2–5', min: 2, max: 5 }];
+  for (let a = 6; a <= 86; a += 5) f.push({ id: `${a}-${a + 4}`, rotulo: `${a}–${a + 4}`, min: a, max: a + 4 });
+  f.push({ id: '91+', rotulo: '91+', min: 91, max: Infinity });
+  return f;
+})();
+function faixaEtaria(idade) { return FAIXAS.find(f => idade >= f.min && idade <= f.max).id; }
+function rotuloFaixa(id) { const f = FAIXAS.find(f => f.id === id); return f.id === '0-1' ? '0–1 ano (neonatal)' : `${f.rotulo} anos`; }
+
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+function diaSemana(iso) { return new Date(iso + 'T12:00:00').getDay(); }
+function especialidade(d) { return d.motivo || 'Não informado'; }
+function pct(n, total) { return total ? (n / total * 100).toFixed(1).replace('.', ',') + '%' : '—'; }
+function ordenar(lista) { return [...lista].sort((a, b) => (b.data + b.hora).localeCompare(a.data + a.hora)); }
+
+let toastTimer;
+function toast(msg, erro = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (erro ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 3500);
 }
 
+// ───────────────────────── Filtros ─────────────────────────
 function filtrar() {
-  const b = document.getElementById('fBairro').value;
-  const s = document.getElementById('fSexo').value;
-  const i = document.getElementById('fIdade').value;
-  const t = document.getElementById('fTurno').value;
+  const ini = fIni.value, fim = fFim.value;
+  const b = fBairro.value, s = fSexo.value, i = fIdade.value, t = fTurno.value, e = fEsp.value, o = fObito.value;
   return DADOS.filter(d => {
+    if (ini && d.data < ini) return false;
+    if (fim && d.data > fim) return false;
     if (b && d.bairro !== b) return false;
     if (s && d.sexo !== s) return false;
     if (i && faixaEtaria(d.idade) !== i) return false;
     if (t && turno(d.hora) !== t) return false;
+    if (e && especialidade(d) !== e) return false;
+    if (o && !!d.obito !== (o === 'sim')) return false;
     return true;
   });
 }
 
-// Charts
-let cTurno, cSexo, cBairro, cIdade;
-const FONT = "'Barlow', sans-serif";
-const TICK = { color: '#7a8ba8', font: { family: FONT, size: 11 } };
-const GRID_CLR = 'rgba(255,255,255,0.05)';
-
-function makeCharts(data) {
-  // Turno
-  const turnos = {dia:0, noite:0};
-  data.forEach(d => turnos[turno(d.hora)]++);
-  if (cTurno) cTurno.destroy();
-  cTurno = new Chart(document.getElementById('chartTurno'), {
-    type: 'bar',
-    data: {
-      labels: ['Dia (07–19h)', 'Noite (19–07h)'],
-      datasets: [{ data: [turnos.dia, turnos.noite],
-        backgroundColor: ['rgba(59,130,246,0.7)','rgba(139,92,246,0.7)'],
-        borderRadius: 6, borderSkipped: false }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false },
-      tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
-      scales: { x: { ticks: TICK, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
-        y: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } } } }
-  });
-
-  // Sexo
-  const masc = data.filter(d => d.sexo === 'M').length;
-  const fem = data.length - masc;
-  if (cSexo) cSexo.destroy();
-  cSexo = new Chart(document.getElementById('chartSexo'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Masculino', 'Feminino'],
-      datasets: [{ data: [masc, fem],
-        backgroundColor: ['rgba(59,130,246,0.75)','rgba(236,72,153,0.75)'],
-        borderWidth: 0, hoverOffset: 6 }]
-    },
-    options: { responsive: true, cutout: '65%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#7a8ba8', font: { family: FONT }, padding: 16 } },
-        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } } }
-  });
-
-  // Bairro
-  const bairroCount = {};
-  data.forEach(d => bairroCount[d.bairro] = (bairroCount[d.bairro]||0)+1);
-  const bairroSort = Object.entries(bairroCount).sort((a,b)=>b[1]-a[1]);
-  if (cBairro) cBairro.destroy();
-  cBairro = new Chart(document.getElementById('chartBairro'), {
-    type: 'bar',
-    data: {
-      labels: bairroSort.map(e=>e[0]),
-      datasets: [{ data: bairroSort.map(e=>e[1]),
-        backgroundColor: 'rgba(6,182,212,0.65)', borderRadius: 5, borderSkipped: false }]
-    },
-    options: { indexAxis: 'y', responsive: true,
-      plugins: { legend: { display: false },
-        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
-      scales: { x: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
-        y: { ticks: { color: '#a0aec0', font: { family: FONT, size: 11 } }, grid: { display: false }, border: { color: 'transparent' } } } }
-  });
-
-  // Faixa etária
-  const faixas = {'0-17':0,'18-39':0,'40-59':0,'60+':0};
-  data.forEach(d => faixas[faixaEtaria(d.idade)]++);
-  if (cIdade) cIdade.destroy();
-  cIdade = new Chart(document.getElementById('chartIdade'), {
-    type: 'bar',
-    data: {
-      labels: ['0–17 anos','18–39 anos','40–59 anos','60+ anos'],
-      datasets: [{ data: Object.values(faixas),
-        backgroundColor: ['rgba(16,185,129,0.7)','rgba(59,130,246,0.7)','rgba(245,158,11,0.7)','rgba(239,68,68,0.7)'],
-        borderRadius: 6, borderSkipped: false }]
-    },
-    options: { responsive: true,
-      plugins: { legend: { display: false },
-        tooltip: { backgroundColor: '#1a2236', titleColor: '#e8edf5', bodyColor: '#7a8ba8' } },
-      scales: { x: { ticks: TICK, grid: { color: GRID_CLR }, border: { color: 'transparent' } },
-        y: { ticks: { ...TICK, stepSize: 1 }, grid: { color: GRID_CLR }, border: { color: 'transparent' } } } }
-  });
+function resetFiltros() {
+  ['fIni', 'fFim', 'fBairro', 'fSexo', 'fIdade', 'fTurno', 'fEsp', 'fObito'].forEach(id => document.getElementById(id).value = '');
+  render();
 }
 
-function makeTbody(data) {
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  document.getElementById('semDados').style.display = data.length ? 'none' : 'block';
-  data.forEach((d,i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px">${String(i+1).padStart(2,'0')}</td>
-      <td><span class="hora-tag">${d.hora}</span></td>
-      <td>${d.bairro}</td>
-      <td><span class="motivo-text" title="${d.motivo}">${d.motivo}</span></td>
-      <td><span class="idade-val">${d.idade}</span></td>
-      <td><span class="badge-sexo ${d.sexo==='M'?'badge-m':'badge-f'}">${d.sexo==='M'?'M':'F'}</span></td>
-    `;
-    tbody.appendChild(tr);
-  });
+function atualizarListas() {
+  const bairros = [...new Set(DADOS.map(d => d.bairro))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const atual = fBairro.value;
+  fBairro.innerHTML = '<option value="">Todos</option>' + bairros.map(b => `<option>${esc(b)}</option>`).join('');
+  fBairro.value = bairros.includes(atual) ? atual : '';
+  listaBairros.innerHTML = bairros.map(b => `<option value="${esc(b)}">`).join('');
+  const sugestoes = ['Clínico', 'Trauma', 'Cardiológico', 'Neurológico', 'Respiratório', 'Pediátrico', 'Neonatal', 'Obstétrico', 'Psiquiátrico'];
+  const motivos = [...new Set(DADOS.map(d => d.motivo).filter(Boolean).concat(sugestoes))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  listaMotivos.innerHTML = motivos.map(m => `<option value="${esc(m)}">`).join('');
+  const esps = [...new Set(DADOS.map(especialidade))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const espAtual = fEsp.value;
+  fEsp.innerHTML = '<option value="">Todas</option>' + esps.map(m => `<option>${esc(m)}</option>`).join('');
+  fEsp.value = esps.includes(espAtual) ? espAtual : '';
 }
 
-function updateMetrics(data) {
+function montarFiltroIdade() {
+  fIdade.innerHTML = '<option value="">Todas</option>' + FAIXAS.map(f => `<option value="${f.id}">${rotuloFaixa(f.id)}</option>`).join('');
+}
+
+function descreverPeriodo(data) {
+  if (fIni.value || fFim.value) return `Período: ${fIni.value ? brData(fIni.value) : 'início'} a ${fFim.value ? brData(fFim.value) : 'hoje'}`;
+  if (!data.length) return 'Nenhum atendimento registrado';
+  const datas = data.map(d => d.data).sort();
+  return datas[0] === datas[datas.length - 1]
+    ? `Atendimentos de ${brData(datas[0])}`
+    : `Período: ${brData(datas[0])} a ${brData(datas[datas.length - 1])}`;
+}
+
+// ───────────────────────── Estatísticas ─────────────────────────
+function estatisticas(data) {
   const total = data.length;
-  const masc = data.filter(d=>d.sexo==='M').length;
-  const fem = total - masc;
-  const mediaIdade = total ? Math.round(data.reduce((a,d)=>a+d.idade,0)/total) : 0;
-  const horaPico = (() => {
-    const cnt = {};
-    data.forEach(d => { const h = d.hora.split(':')[0]+'h'; cnt[h]=(cnt[h]||0)+1; });
-    return Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—';
-  })();
-  document.getElementById('mTotal').textContent = total;
-  document.getElementById('mIdade').textContent = mediaIdade || '—';
-  document.getElementById('mMasc').textContent = masc;
-  document.getElementById('mFem').textContent = fem;
-  document.getElementById('mMascPct').textContent = total ? (masc/total*100).toFixed(1)+'%' : '—';
-  document.getElementById('mFemPct').textContent = total ? (fem/total*100).toFixed(1)+'%' : '—';
-  document.getElementById('mPico').textContent = horaPico;
-  document.getElementById('totalGeral').textContent = total;
-}
-
-function aplicarFiltros() {
-  const data = filtrar();
-  updateMetrics(data);
-  makeCharts(data);
-  makeTbody(data);
-}
-
-async function exportarPDF() {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape para mais espaço
-  const data = filtrar();
-  const dataAtual = new Date().toLocaleDateString('pt-BR');
-  const titulos = {
-    chartTurno: 'Atendimentos por Turno',
-    chartSexo: 'Distribuição por Sexo',
-    chartBairro: 'Atendimentos por Bairro',
-    chartIdade: 'Distribuição por Faixa Etária'
+  const masc = data.filter(d => d.sexo === 'M').length;
+  const fem = data.filter(d => d.sexo === 'F').length;
+  const idades = data.map(d => d.idade);
+  const porDia = {}, porHora = Array(24).fill(0), porSemana = Array(7).fill(0), porBairro = {}, porEsp = {}, obitosEsp = {};
+  const faixas = Object.fromEntries(FAIXAS.map(f => [f.id, 0]));
+  data.forEach(d => {
+    porDia[d.data] = (porDia[d.data] || 0) + 1;
+    porHora[horaNum(d.hora)]++;
+    porSemana[diaSemana(d.data)]++;
+    porBairro[d.bairro] = (porBairro[d.bairro] || 0) + 1;
+    const esp = especialidade(d);
+    porEsp[esp] = (porEsp[esp] || 0) + 1;
+    if (d.obito) obitosEsp[esp] = (obitosEsp[esp] || 0) + 1;
+    faixas[faixaEtaria(d.idade)]++;
+  });
+  const dias = Object.keys(porDia).length;
+  const picoH = total ? porHora.indexOf(Math.max(...porHora)) : -1;
+  const picoS = total ? porSemana.indexOf(Math.max(...porSemana)) : -1;
+  const bairros = Object.entries(porBairro).sort((a, b) => b[1] - a[1]);
+  const especialidades = Object.entries(porEsp).sort((a, b) => b[1] - a[1]);
+  const faixaTop = Object.entries(faixas).sort((a, b) => b[1] - a[1])[0];
+  return {
+    total, masc, fem, dias, porSemana, especialidades, obitosEsp,
+    obitos: data.filter(d => d.obito).length,
+    picoSemana: picoS >= 0 ? DIAS_SEMANA[picoS] : '—',
+    picoSemanaQtd: picoS >= 0 ? porSemana[picoS] : 0,
+    faixaTop: total ? faixaTop : null,
+    mediaDia: dias ? total / dias : 0,
+    idadeMedia: total ? Math.round(idades.reduce((a, n) => a + n, 0) / total) : null,
+    idadeMin: total ? Math.min(...idades) : null,
+    idadeMax: total ? Math.max(...idades) : null,
+    porDia, porHora, faixas, bairros,
+    picoHora: picoH >= 0 ? String(picoH).padStart(2, '0') + 'h' : '—',
+    picoQtd: picoH >= 0 ? porHora[picoH] : 0,
+    turnos: { dia: data.filter(d => turno(d.hora) === 'dia').length, noite: data.filter(d => turno(d.hora) === 'noite').length }
   };
+}
+
+function renderKpis(e) {
+  kTotal.textContent = e.total;
+  kDias.textContent = e.dias ? `em ${e.dias} dia${e.dias > 1 ? 's' : ''} · ${e.turnos.dia} dia / ${e.turnos.noite} noite` : '—';
+  kObitos.textContent = e.obitos;
+  kObitosSub.textContent = e.total ? `${pct(e.obitos, e.total)} dos atendimentos` : '—';
+  kIdade.textContent = e.idadeMedia ?? '—';
+  kIdadeRange.textContent = e.total ? `anos · faixa mais atendida: ${rotuloFaixa(e.faixaTop[0])}` : 'anos';
+  kSemana.textContent = e.picoSemana;
+  const empates = e.porSemana.filter(v => v === e.picoSemanaQtd).length - 1;
+  kSemanaSub.textContent = e.total ? `${e.picoSemanaQtd} ocorrências · ${pct(e.picoSemanaQtd, e.total)}${empates ? ` · empate com ${empates} dia(s)` : ''}` : '—';
+  kEsp.textContent = e.especialidades[0]?.[0] || '—';
+  kEsp.title = kEsp.textContent;
+  kEspSub.textContent = e.especialidades[0] ? `${e.especialidades[0][1]} atendimentos · ${pct(e.especialidades[0][1], e.total)}` : '—';
+  kPico.textContent = e.picoHora;
+  kPicoSub.textContent = e.total ? `${e.picoQtd} atendimento${e.picoQtd > 1 ? 's' : ''} nesse horário` : '—';
+  kBairro.textContent = e.bairros[0]?.[0] || '—';
+  kBairro.title = kBairro.textContent;
+  kBairroSub.textContent = e.bairros[0] ? `${e.bairros[0][1]} atendimentos · ${pct(e.bairros[0][1], e.total)}` : '—';
+}
+
+// ───────────────────────── Gráficos ─────────────────────────
+Chart.defaults.font.family = "'Barlow', sans-serif";
+Chart.defaults.color = '#6b7a8c';
+const GRID = { color: '#eef1f5' };
+const TOOLTIP = { backgroundColor: '#0d2137', padding: 10, cornerRadius: 8 };
+const charts = {};
+
+function grafico(id, config) {
+  if (charts[id]) charts[id].destroy();
+  config.options = Object.assign({ responsive: true, maintainAspectRatio: false, devicePixelRatio: 2, animation: { duration: 400 } }, config.options);
+  config.options.plugins = Object.assign({ legend: { display: false }, tooltip: TOOLTIP }, config.options.plugins);
+  charts[id] = new Chart(document.getElementById(id), config);
+}
+
+const eixos = (horizontal = false) => ({
+  x: { grid: horizontal ? GRID : { display: false }, border: { display: false }, ticks: horizontal ? { precision: 0 } : {}, beginAtZero: true },
+  y: { grid: horizontal ? { display: false } : GRID, border: { display: false }, ticks: horizontal ? {} : { precision: 0 }, beginAtZero: true }
+});
+
+function renderGraficos(e) {
+  const dias = Object.keys(e.porDia).sort();
+  grafico('chartDia', {
+    type: 'line',
+    data: {
+      labels: dias.map(d => brData(d).slice(0, 5)),
+      datasets: [{
+        data: dias.map(d => e.porDia[d]),
+        borderColor: '#d32f2f', backgroundColor: 'rgba(211,47,47,.08)', fill: true,
+        tension: .3, pointRadius: 4, pointBackgroundColor: '#d32f2f', borderWidth: 2.5
+      }]
+    },
+    options: { scales: eixos(), plugins: { tooltip: { ...TOOLTIP, callbacks: { title: it => brData(dias[it[0].dataIndex]), label: it => ` ${it.raw} atendimentos` } } } }
+  });
+
+  grafico('chartHora', {
+    type: 'bar',
+    data: {
+      labels: e.porHora.map((_, h) => String(h).padStart(2, '0') + 'h'),
+      datasets: [{ data: e.porHora, borderRadius: 4, backgroundColor: e.porHora.map((_, h) => h >= 7 && h < 19 ? '#f26b21' : '#16324f') }]
+    },
+    options: { scales: eixos(), plugins: { tooltip: { ...TOOLTIP, callbacks: { label: it => ` ${it.raw} atendimentos` } } } }
+  });
+
+  grafico('chartSexo', {
+    type: 'doughnut',
+    data: { labels: ['Masculino', 'Feminino'], datasets: [{ data: [e.masc, e.fem], backgroundColor: ['#2f6fb3', '#c2417a'], borderWidth: 3, borderColor: '#fff' }] },
+    options: {
+      cutout: '62%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 16, generateLabels: c => c.data.labels.map((l, i) => ({ text: `${l}  ${c.data.datasets[0].data[i]} (${pct(c.data.datasets[0].data[i], e.total)})`, fillStyle: c.data.datasets[0].backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle', index: i })) } }
+      }
+    }
+  });
+
+  const top = e.bairros.slice(0, 10);
+  grafico('chartBairro', {
+    type: 'bar',
+    data: { labels: top.map(b => b[0]), datasets: [{ data: top.map(b => b[1]), backgroundColor: '#d32f2f', borderRadius: 4, barThickness: 'flex', maxBarThickness: 22 }] },
+    options: { indexAxis: 'y', scales: eixos(true), plugins: { tooltip: { ...TOOLTIP, callbacks: { label: it => ` ${it.raw} atendimentos (${pct(it.raw, e.total)})` } } } }
+  });
+
+  grafico('chartIdade', {
+    type: 'bar',
+    data: {
+      labels: FAIXAS.map(f => f.rotulo),
+      datasets: [{ data: FAIXAS.map(f => e.faixas[f.id]), backgroundColor: FAIXAS.map((f, i) => i === 0 ? '#d32f2f' : i === 1 ? '#f26b21' : '#16324f'), borderRadius: 4, maxBarThickness: 50 }]
+    },
+    options: { scales: eixos(), plugins: { tooltip: { ...TOOLTIP, callbacks: { title: it => rotuloFaixa(FAIXAS[it[0].dataIndex].id), label: it => ` ${it.raw} atendimentos (${pct(it.raw, e.total)})` } } } }
+  });
+
+  const semana = ORDEM_SEMANA.map(i => e.porSemana[i]);
+  const maxSemana = Math.max(...semana);
+  grafico('chartSemana', {
+    type: 'bar',
+    data: {
+      labels: ORDEM_SEMANA.map(i => DIAS_SEMANA[i].slice(0, 3)),
+      datasets: [{ data: semana, backgroundColor: semana.map(v => v === maxSemana && v > 0 ? '#d32f2f' : '#f6a26b'), borderRadius: 5 }]
+    },
+    options: { scales: eixos(), plugins: { tooltip: { ...TOOLTIP, callbacks: { title: it => DIAS_SEMANA[ORDEM_SEMANA[it[0].dataIndex]], label: it => ` ${it.raw} ocorrências (${pct(it.raw, e.total)})` } } } }
+  });
+
+  const esps = e.especialidades.slice(0, 10);
+  grafico('chartEsp', {
+    type: 'bar',
+    data: {
+      labels: esps.map(x => x[0]),
+      datasets: [
+        { label: 'Atendimentos', data: esps.map(x => x[1]), backgroundColor: '#2f6fb3', borderRadius: 4, maxBarThickness: 18 },
+        { label: 'Óbitos', data: esps.map(x => e.obitosEsp[x[0]] || 0), backgroundColor: '#2b2b2b', borderRadius: 4, maxBarThickness: 18 }
+      ]
+    },
+    options: { indexAxis: 'y', scales: eixos(true) }
+  });
+
+  grafico('chartObito', {
+    type: 'doughnut',
+    data: { labels: ['Com óbito', 'Sem óbito'], datasets: [{ data: [e.obitos, e.total - e.obitos], backgroundColor: ['#2b2b2b', '#e3e8ef'], borderWidth: 3, borderColor: '#fff' }] },
+    options: {
+      cutout: '62%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 16, generateLabels: c => c.data.labels.map((l, i) => ({ text: `${l}  ${c.data.datasets[0].data[i]} (${pct(c.data.datasets[0].data[i], e.total)})`, fillStyle: c.data.datasets[0].backgroundColor[i], strokeStyle: 'transparent', pointStyle: 'circle', index: i })) } }
+      }
+    }
+  });
+}
+
+// ───────────────────────── Tabela ─────────────────────────
+const POR_PAGINA = 15;
+let pagina = 0;
+
+const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
+
+function renderTabela() {
+  const termo = semAcento(busca.value);
+  const lista = ordenar(filtrar()).filter(d => !termo || semAcento(d.bairro + ' ' + (d.motivo || '')).includes(termo));
+  const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+  pagina = Math.min(pagina, paginas - 1);
+  const fatia = lista.slice(pagina * POR_PAGINA, (pagina + 1) * POR_PAGINA);
+
+  tbody.innerHTML = fatia.map(d => `
+    <tr>
+      <td class="mono">${brData(d.data)}</td>
+      <td class="mono">${esc(d.hora)}</td>
+      <td>${esc(d.bairro)}</td>
+      <td class="mono">${esc(d.idade)}</td>
+      <td><span class="tag-sexo ${d.sexo === 'M' ? 'tag-m' : 'tag-f'}">${esc(d.sexo)}</span></td>
+      <td style="color:var(--muted)">${esc(d.motivo || '—')}</td>
+      <td>${d.obito ? '<span class="tag-obito">ÓBITO</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+      <td><div class="row-actions">
+        <button class="icon-btn" title="Editar" onclick="abrirForm('${d.id}')">${ICON_EDIT}</button>
+        <button class="icon-btn del" title="Excluir" onclick="excluir('${d.id}')">${ICON_DEL}</button>
+      </div></td>
+    </tr>`).join('');
+  semDados.hidden = lista.length > 0;
+  pager.innerHTML = lista.length <= POR_PAGINA ? (lista.length ? `${lista.length} registro${lista.length > 1 ? 's' : ''}` : '') : `
+    <span>${pagina * POR_PAGINA + 1}–${pagina * POR_PAGINA + fatia.length} de ${lista.length} registros</span>
+    <span style="display:flex;gap:6px">
+      <button class="btn" ${pagina === 0 ? 'disabled' : ''} onclick="pagina--; renderTabela()">‹ Anterior</button>
+      <button class="btn" ${pagina >= paginas - 1 ? 'disabled' : ''} onclick="pagina++; renderTabela()">Próxima ›</button>
+    </span>`;
+}
+
+// ───────────────────────── Render geral ─────────────────────────
+function render() {
+  const data = filtrar();
+  const e = estatisticas(data);
+  heroTotal.textContent = e.total;
+  heroPeriodo.textContent = descreverPeriodo(data);
+  notice.classList.toggle('show', EXEMPLO && DADOS.length > 0);
+  renderKpis(e);
+  renderGraficos(e);
+  pagina = 0;
+  renderTabela();
+}
+
+// ───────────────────────── Cadastro / edição ─────────────────────────
+let salvarEOutro = false;
+
+function abrirForm(id) {
+  const r = id ? DADOS.find(d => d.id === id) : null;
+  formTitulo.textContent = r ? 'Editar atendimento' : 'Novo atendimento';
+  btnSalvarOutro.hidden = !!r;
+  iId.value = r?.id || '';
+  iData.value = r?.data || iData.dataset.ultima || hoje();
+  iHora.value = r?.hora || '';
+  iBairro.value = r?.bairro || '';
+  iIdade.value = r?.idade ?? '';
+  iMotivo.value = r?.motivo || '';
+  iSexoM.checked = r?.sexo === 'M';
+  iSexoF.checked = r?.sexo === 'F';
+  iObito.checked = !!r?.obito;
+  formErro.textContent = '';
+  ovForm.classList.add('show');
+  setTimeout(() => (r ? iBairro : iHora).focus(), 50);
+}
+
+function fecharForm() { ovForm.classList.remove('show'); }
+
+function salvarForm(ev) {
+  ev.preventDefault();
+  const idade = parseInt(iIdade.value, 10);
+  const sexo = iSexoM.checked ? 'M' : iSexoF.checked ? 'F' : '';
+  if (!sexo) { formErro.textContent = 'Selecione o sexo do paciente.'; return; }
+  if (isNaN(idade) || idade < 0 || idade > 120) { formErro.textContent = 'Informe uma idade entre 0 e 120.'; return; }
+
+  const campos = { data: iData.value, hora: iHora.value, bairro: iBairro.value.trim(), idade, sexo, motivo: iMotivo.value.trim(), obito: iObito.checked };
+  if (iId.value) {
+    const r = DADOS.find(d => d.id === iId.value);
+    Object.assign(r, campos);
+    toast('Atendimento atualizado.');
+  } else {
+    if (EXEMPLO) { DADOS = []; EXEMPLO = false; }
+    DADOS.push({ id: novoId(), ...campos });
+    toast('Atendimento cadastrado.');
+  }
+  iData.dataset.ultima = campos.data;
+  salvar();
+  atualizarListas();
+  render();
+
+  if (salvarEOutro && !iId.value) {
+    ['iHora', 'iBairro', 'iIdade', 'iMotivo'].forEach(id => document.getElementById(id).value = '');
+    iSexoM.checked = iSexoF.checked = iObito.checked = false;
+    formErro.textContent = '';
+    iHora.focus();
+  } else {
+    fecharForm();
+  }
+}
+
+function excluir(id) {
+  const r = DADOS.find(d => d.id === id);
+  if (!r || !confirm(`Excluir o atendimento de ${brData(r.data)} às ${r.hora} (${r.bairro})?`)) return;
+  DADOS = DADOS.filter(d => d.id !== id);
+  salvar();
+  atualizarListas();
+  render();
+  toast('Atendimento excluído.');
+}
+
+function removerExemplos() {
+  DADOS = [];
+  EXEMPLO = false;
+  salvar();
+  atualizarListas();
+  render();
+  toast('Exemplos removidos. Cadastre ou importe os atendimentos.');
+}
+
+function limparTudo() {
+  if (!DADOS.length) return;
+  if (!confirm(`Apagar todos os ${DADOS.length} atendimentos? Recomenda-se exportar a planilha antes.`)) return;
+  removerExemplos();
+}
+
+// ───────────────────────── Importação ─────────────────────────
+const ALIASES = {
+  data: 'data', dia: 'data', 'data da ocorrencia': 'data',
+  hora: 'hora', horario: 'hora', 'horario da ocorrencia': 'hora',
+  bairro: 'bairro', localidade: 'bairro',
+  idade: 'idade',
+  sexo: 'sexo', genero: 'sexo',
+  motivo: 'motivo', 'motivo da ativacao': 'motivo', 'motivo / observacao': 'motivo', observacao: 'motivo', ocorrencia: 'motivo',
+  especialidade: 'motivo', 'motivo / especialidade': 'motivo', 'motivo/especialidade': 'motivo',
+  obito: 'obito', obitos: 'obito'
+};
+let importPendente = null;
+
+function parseCSV(texto) {
+  texto = texto.replace(/^﻿/, '');
+  const primeira = texto.split(/\r?\n/)[0];
+  const sep = (primeira.match(/;/g) || []).length > (primeira.match(/,/g) || []).length ? ';' : ',';
+  const linhas = [];
+  let linha = [], campo = '', aspas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (aspas) {
+      if (c === '"' && texto[i + 1] === '"') { campo += '"'; i++; }
+      else if (c === '"') aspas = false;
+      else campo += c;
+    } else if (c === '"') aspas = true;
+    else if (c === sep) { linha.push(campo); campo = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && texto[i + 1] === '\n') i++;
+      linha.push(campo); linhas.push(linha); linha = []; campo = '';
+    } else campo += c;
+  }
+  if (campo || linha.length) { linha.push(campo); linhas.push(linha); }
+  const validas = linhas.filter(l => l.some(v => v.trim()));
+  if (validas.length < 2) throw new Error('planilha vazia ou sem cabeçalho');
+  const cab = validas[0].map(c => c.trim());
+  return validas.slice(1).map(l => Object.fromEntries(cab.map((c, i) => [c, (l[i] ?? '').trim()])));
+}
+
+function normalizarData(v) {
+  if (!v) return hoje();
+  v = String(v).trim();
+  let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return null;
+}
+
+function normalizarRegistro(bruto) {
+  const r = {};
+  for (const [k, v] of Object.entries(bruto)) {
+    if (k === 'id') continue;
+    const chave = ALIASES[semAcento(k)] || k;
+    r[chave] = typeof v === 'string' ? v.trim() : v;
+  }
+  r.data = normalizarData(r.data);
+  const h = String(r.hora ?? '').match(/^(\d{1,2})[:h](\d{2})?/);
+  r.hora = h ? `${h[1].padStart(2, '0')}:${h[2] || '00'}` : '';
+  r.idade = parseInt(r.idade, 10);
+  const s = semAcento(r.sexo ?? '');
+  r.sexo = s.startsWith('m') ? 'M' : s.startsWith('f') ? 'F' : '';
+  r.bairro = String(r.bairro ?? '').trim();
+  r.motivo = String(r.motivo ?? '').trim();
+  r.obito = r.obito === true || ['sim', 's', 'x', '1', 'true', 'obito'].includes(semAcento(r.obito ?? ''));
+  const ok = r.data && r.hora && horaNum(r.hora) < 24 && r.bairro && !isNaN(r.idade) && r.idade >= 0 && r.sexo;
+  return ok ? { id: novoId(), ...r } : null;
+}
+
+function lerArquivo(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const texto = ev.target.result;
+      let brutos = /\.json$/i.test(file.name) ? JSON.parse(texto) : parseCSV(texto);
+      if (brutos && Array.isArray(brutos.registros)) brutos = brutos.registros;
+      if (!Array.isArray(brutos)) throw new Error('o arquivo não contém uma lista de atendimentos');
+      brutos = brutos.flat(Infinity);
+      const validos = brutos.map(normalizarRegistro).filter(Boolean);
+      const invalidos = brutos.length - validos.length;
+      if (!validos.length) throw new Error('nenhum registro válido. Colunas esperadas: data, hora, bairro, idade, sexo (motivo opcional)');
+      importPendente = validos;
+      const datas = validos.map(v => v.data).sort();
+      importResumo.innerHTML = `
+        <div>Arquivo: <strong>${esc(file.name)}</strong></div>
+        <div><strong>${validos.length}</strong> atendimentos válidos · período de <strong>${brData(datas[0])}</strong> a <strong>${brData(datas[datas.length - 1])}</strong></div>
+        ${invalidos ? `<div style="color:var(--red)">${invalidos} linha(s) ignorada(s) por falta de hora, bairro, idade ou sexo válidos.</div>` : ''}
+        <div>Os dados atuais têm <strong>${EXEMPLO ? 0 : DADOS.length}</strong> atendimentos. Deseja adicionar ou substituir?</div>`;
+      ovImport.classList.add('show');
+    } catch (err) {
+      toast('Erro ao importar: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function fecharImport() { ovImport.classList.remove('show'); importPendente = null; }
+
+function confirmarImport(modo) {
+  if (!importPendente) return;
+  DADOS = modo === 'substituir' || EXEMPLO ? importPendente : DADOS.concat(importPendente);
+  EXEMPLO = false;
+  const n = importPendente.length;
+  fecharImport();
+  salvar();
+  atualizarListas();
+  render();
+  toast(`${n} atendimentos importados.`);
+}
+
+// ───────────────────────── Exportação planilha ─────────────────────────
+function exportarCSV() {
+  const lista = ordenar(filtrar()).reverse();
+  if (!lista.length) { toast('Não há atendimentos para exportar.', true); return; }
+  const extras = [...new Set(lista.flatMap(d => Object.keys(d)))].filter(k => k !== 'id' && !CAMPOS.includes(k));
+  const colunas = [...CAMPOS, ...extras];
+  const celula = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const valor = (d, c) => c === 'data' ? brData(d.data) : c === 'obito' ? (d.obito ? 'Sim' : 'Não') : d[c];
+  const linhas = [colunas.map(c => CABECALHO_CSV[c] || c).join(';')].concat(lista.map(d => colunas.map(c => celula(valor(d, c))).join(';')));
+  baixar(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' }), `samu-atendimentos-${hoje()}.csv`);
+  toast('Planilha exportada. Edite no Excel e use "Importar" para atualizar.');
+}
+
+function baixar(blob, nome) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ───────────────────────── Exportação PDF ─────────────────────────
+async function exportarPDF() {
+  const data = filtrar();
+  if (!data.length) { toast('Não há atendimentos para exportar.', true); return; }
+  const e = estatisticas(data);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4', compress: true });
+  const W = 297, H = 210, M = 12;
+  const NAVY = [13, 33, 55], RED = [211, 47, 47], ORANGE = [242, 107, 33], MUTED = [107, 122, 140];
 
   // Cabeçalho
-  pdf.setFillColor(11, 15, 26); // --bg
-  pdf.rect(0, 0, 297, 35, 'F');
+  pdf.setFillColor(...NAVY);
+  pdf.rect(0, 0, W, 30, 'F');
+  pdf.setFillColor(...ORANGE);
+  pdf.rect(0, 30, W, 1.2, 'F');
+  try { pdf.addImage(SAMU_LOGO, 'JPEG', M, 4, 22, 22); } catch (err) { /* sem logo */ }
   pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(22);
-  pdf.text('Dashboard de Atendimentos', 15, 20);
-  pdf.setFontSize(11);
-  pdf.setTextColor(122, 139, 168); // --muted
-  pdf.text(`Registro de ocorrências · ${dataAtual} · ${data.length} registros`, 15, 30);
-
-  // Métricas resumidas
-  const masc = data.filter(d => d.sexo === 'M').length;
-  const fem = data.length - masc;
-  const mediaIdade = data.length ? Math.round(data.reduce((a, d) => a + d.idade, 0) / data.length) : 0;
-  const turnos = {dia: 0, noite: 0};
-  data.forEach(d => turnos[turno(d.hora)]++);
-
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(18);
+  pdf.text('SAMU 192 · Relatório Estatístico de Atendimentos', M + 28, 14);
+  pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
-  pdf.setTextColor(0);
-  const metricasY = 45;
-  pdf.text(`Total: ${data.length} | Masculino: ${masc} | Feminino: ${fem} | Média Idade: ${mediaIdade} | Dia: ${turnos.dia} | Noite: ${turnos.noite}`, 15, metricasY);
+  pdf.setTextColor(185, 199, 216);
+  pdf.text(descreverPeriodo(data), M + 28, 21);
+  const filtros = [
+    fBairro.value && `Bairro: ${fBairro.value}`,
+    fSexo.value && `Sexo: ${fSexo.value === 'M' ? 'Masculino' : 'Feminino'}`,
+    fIdade.value && `Faixa etária: ${fIdade.value} anos`,
+    fTurno.value && `Turno: ${fTurno.value === 'dia' ? 'Dia' : 'Noite'}`
+  ].filter(Boolean).join(' · ');
+  pdf.text(filtros ? `Filtros: ${filtros}` : 'Sem filtros aplicados', M + 28, 26);
+  pdf.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, W - M, 26, { align: 'right' });
 
-  // Gráficos - Layout 2x2
-  const graficos = [
-    { id: 'chartTurno', titulo: titulos.chartTurno },
-    { id: 'chartSexo', titulo: titulos.chartSexo },
-    { id: 'chartBairro', titulo: titulos.chartBairro },
-    { id: 'chartIdade', titulo: titulos.chartIdade }
+  // Indicadores
+  const kpis = [
+    ['ATENDIMENTOS', String(e.total), `${e.dias} dia(s)`, RED],
+    ['ÓBITOS', String(e.obitos), pct(e.obitos, e.total), [43, 43, 43]],
+    ['IDADE MÉDIA', String(e.idadeMedia), `pico: ${rotuloFaixa(e.faixaTop[0])}`, NAVY],
+    ['HORÁRIO DE PICO', e.picoHora, `${e.picoQtd} atendimentos`, ORANGE],
+    ['DIA DA SEMANA', e.picoSemana, `${e.picoSemanaQtd} ocorrências`, ORANGE],
+    ['BAIRRO LÍDER', e.bairros[0][0], `${e.bairros[0][1]} atend.`, RED],
+    ['ESPECIALIDADE', e.especialidades[0][0], `${e.especialidades[0][1]} atend.`, [47, 111, 179]]
   ];
+  const kw = (W - 2 * M - 6 * 3) / 7, ky = 36, kh = 22;
+  kpis.forEach(([rot, val, sub, cor], i) => {
+    const x = M + i * (kw + 3);
+    pdf.setFillColor(245, 247, 250);
+    pdf.roundedRect(x, ky, kw, kh, 2, 2, 'F');
+    pdf.setFillColor(...cor);
+    pdf.rect(x, ky, 1.2, kh, 'F');
+    pdf.setFontSize(7); pdf.setTextColor(...MUTED); pdf.setFont('helvetica', 'bold');
+    pdf.text(rot, x + 4, ky + 6);
+    pdf.setFontSize(val.length > 10 ? 10 : 16); pdf.setTextColor(...NAVY);
+    pdf.text(pdf.splitTextToSize(val, kw - 6)[0], x + 4, ky + 14);
+    pdf.setFontSize(7); pdf.setTextColor(...MUTED); pdf.setFont('helvetica', 'normal');
+    pdf.text(pdf.splitTextToSize(sub, kw - 6)[0], x + 4, ky + 19);
+  });
 
-  let startY = 55;
-  const colWidth = 130;
-  const rowHeight = 95;
-  const marginX = 15;
+  // Gráficos
+  const caixa = (id, titulo, x, y, w, h) => {
+    pdf.setDrawColor(227, 232, 239);
+    pdf.roundedRect(x, y, w, h, 2, 2, 'S');
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(...NAVY);
+    pdf.text(titulo, x + 4, y + 7);
+    const cv = document.getElementById(id);
+    const maxW = w - 8, maxH = h - 12;
+    const r = Math.min(maxW / cv.width, maxH / cv.height);
+    const iw = cv.width * r, ih = cv.height * r;
+    pdf.addImage(cv.toDataURL('image/png'), 'PNG', x + 4 + (maxW - iw) / 2, y + 9 + (maxH - ih) / 2, iw, ih, undefined, 'FAST');
+  };
+  const gap = 5, gy = ky + kh + gap, uw = W - 2 * M, gh = (H - gy - M - gap) / 2;
+  caixa('chartHora', 'Horários de pico', M, gy, uw * 0.62, gh);
+  caixa('chartSemana', 'Ocorrências por dia da semana', M + uw * 0.62 + gap, gy, uw * 0.38 - gap, gh);
+  caixa('chartIdade', 'Atendimentos por faixa etária (0–1 neonatal, 2–5 e a cada 5 anos)', M, gy + gh + gap, uw, gh);
 
-  for (let i = 0; i < graficos.length; i++) {
-    const grafico = graficos[i];
-    const canvas = document.getElementById(grafico.id);
-    if (!canvas) continue;
+  // Página 2 de gráficos
+  pdf.addPage('a4', 'l');
+  cabecalhoPagina(pdf, 'Bairros, especialidades e óbitos', W, M, NAVY, ORANGE);
+  const g2y = 22, g2h = (H - g2y - M - gap) / 2, half = (uw - gap) / 2, third = (uw - 2 * gap) / 3;
+  caixa('chartBairro', 'Atendimentos por bairro (top 10)', M, g2y, half, g2h);
+  caixa('chartEsp', 'Especialidades (atendimentos e óbitos)', M + half + gap, g2y, half, g2h);
+  caixa('chartObito', 'Óbitos', M, g2y + g2h + gap, third, g2h);
+  caixa('chartSexo', 'Sexo', M + third + gap, g2y + g2h + gap, third, g2h);
+  caixa('chartDia', 'Atendimentos por dia', M + 2 * (third + gap), g2y + g2h + gap, third, g2h);
 
-    const col = i % 2;
-    const row = Math.floor(i / 2);
-    const x = marginX + (col * colWidth);
-    const y = startY + (row * rowHeight);
+  // Tabelas de resumo + registros
+  const resumo = (titulo, cabecalho, linhas, inicio) => pdf.autoTable({
+    head: [cabecalho],
+    body: linhas,
+    startY: inicio,
+    margin: { left: M, right: M, top: 22 },
+    theme: 'grid',
+    styles: { fontSize: 9, cellPadding: 2, lineColor: [227, 232, 239] },
+    headStyles: { fillColor: NAVY, textColor: 255 },
+    columnStyles: Object.fromEntries(cabecalho.slice(1).map((_, i) => [i + 1, { halign: 'right' }])),
+    didDrawPage: () => cabecalhoPagina(pdf, titulo, W, M, NAVY, ORANGE)
+  });
+  const linhaResumo = (nome, sub) => [nome, sub.length, pct(sub.length, e.total), sub.filter(d => d.obito).length,
+    sub.filter(d => d.sexo === 'M').length, sub.filter(d => d.sexo === 'F').length, Math.round(sub.reduce((a, d) => a + d.idade, 0) / sub.length)];
+  const cabResumo = ['Atendimentos', '%', 'Óbitos', 'Masc.', 'Fem.', 'Idade média'];
 
-    // Título do gráfico
-    pdf.setFontSize(11);
-    pdf.setTextColor(59, 130, 246); // --accent
-    pdf.setFont(undefined, 'bold');
-    pdf.text(grafico.titulo, x, y);
-    pdf.setFont(undefined, 'normal');
+  pdf.addPage('a4', 'l');
+  resumo('Resumo por especialidade', ['Especialidade', ...cabResumo], e.especialidades.map(([n]) => linhaResumo(n, data.filter(d => especialidade(d) === n))), 22);
+  pdf.addPage('a4', 'l');
+  resumo('Resumo por bairro', ['Bairro', ...cabResumo], e.bairros.map(([b]) => linhaResumo(b, data.filter(d => d.bairro === b))), 22);
+  pdf.addPage('a4', 'l');
+  resumo('Resumo por faixa etária e dia da semana', ['Faixa etária', ...cabResumo],
+    FAIXAS.filter(f => e.faixas[f.id]).map(f => linhaResumo(rotuloFaixa(f.id), data.filter(d => faixaEtaria(d.idade) === f.id))), 22);
+  resumo('Resumo por faixa etária e dia da semana', ['Dia da semana', ...cabResumo],
+    ORDEM_SEMANA.filter(i => e.porSemana[i]).map(i => linhaResumo(DIAS_SEMANA[i], data.filter(d => diaSemana(d.data) === i))), pdf.lastAutoTable.finalY + 8);
 
-    // Imagem do gráfico
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 120;
-    const imgHeight = 75;
-    pdf.addImage(imgData, 'PNG', x, y + 5, imgWidth, imgHeight);
+  pdf.addPage('a4', 'l');
+  pdf.autoTable({
+    head: [['Data', 'Dia', 'Horário', 'Bairro', 'Idade', 'Sexo', 'Motivo / especialidade', 'Óbito']],
+    body: ordenar(data).reverse().map(d => [brData(d.data), DIAS_SEMANA[diaSemana(d.data)].slice(0, 3), d.hora, d.bairro, d.idade, d.sexo, d.motivo || '—', d.obito ? 'Sim' : '—']),
+    startY: 22,
+    margin: { left: M, right: M, top: 22 },
+    theme: 'striped',
+    styles: { fontSize: 8.5, cellPadding: 1.8 },
+    headStyles: { fillColor: RED, textColor: 255 },
+    alternateRowStyles: { fillColor: [248, 249, 251] },
+    columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 14 }, 2: { cellWidth: 18 }, 3: { cellWidth: 55 }, 4: { cellWidth: 15, halign: 'right' }, 5: { cellWidth: 14, halign: 'center' }, 7: { cellWidth: 16, halign: 'center' } },
+    didParseCell: c => { if (c.section === 'body' && c.column.index === 7 && c.cell.raw === 'Sim') { c.cell.styles.textColor = RED; c.cell.styles.fontStyle = 'bold'; } },
+    didDrawPage: () => cabecalhoPagina(pdf, 'Registros de atendimento', W, M, NAVY, ORANGE)
+  });
+
+  // Rodapé com numeração
+  const total = pdf.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    pdf.setPage(p);
+    pdf.setFontSize(8); pdf.setTextColor(...MUTED); pdf.setFont('helvetica', 'normal');
+    pdf.text('SAMU 192 · Serviço de Atendimento Móvel de Urgência', M, H - 5);
+    pdf.text(`Página ${p} de ${total}`, W - M, H - 5, { align: 'right' });
   }
 
-  // Nova página para tabela
-  pdf.addPage('l');
-
-  // Cabeçalho da segunda página
-  pdf.setFillColor(11, 15, 26);
-  pdf.rect(0, 0, 297, 25, 'F');
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(16);
-  pdf.text('Registros Detalhados', 15, 17);
-
-  // Tabela
-  let tableY = 35;
-  const rowHeightTable = 6;
-  const pageHeight = 200;
-
-  // Cabeçalho da tabela
-  pdf.setFillColor(26, 34, 54); // --surface2
-  pdf.rect(15, tableY, 267, 8, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(122, 139, 168);
-  pdf.text('#', 18, tableY + 5);
-  pdf.text('Horário', 30, tableY + 5);
-  pdf.text('Bairro', 55, tableY + 5);
-  pdf.text('Motivo', 110, tableY + 5);
-  pdf.text('Idade', 255, tableY + 5);
-  pdf.text('Sexo', 275, tableY + 5);
-  tableY += 10;
-
-  // Linhas da tabela
-  pdf.setFontSize(8);
-  pdf.setTextColor(232, 237, 245);
-
-  data.forEach((d, i) => {
-    if (tableY > pageHeight) {
-      pdf.addPage('l');
-      tableY = 20;
-
-      // Repetir cabeçalho
-      pdf.setFillColor(26, 34, 54);
-      pdf.rect(15, tableY, 267, 8, 'F');
-      pdf.setFontSize(9);
-      pdf.setTextColor(122, 139, 168);
-      pdf.text('#', 18, tableY + 5);
-      pdf.text('Horário', 30, tableY + 5);
-      pdf.text('Bairro', 55, tableY + 5);
-      pdf.text('Motivo', 110, tableY + 5);
-      pdf.text('Idade', 255, tableY + 5);
-      pdf.text('Sexo', 275, tableY + 5);
-      tableY += 10;
-      pdf.setFontSize(8);
-      pdf.setTextColor(232, 237, 245);
-    }
-
-    // Linha alternada
-    if (i % 2 === 0) {
-      pdf.setFillColor(19, 25, 41); // --surface
-      pdf.rect(15, tableY - 1, 267, rowHeightTable, 'F');
-    }
-
-    pdf.text(String(i + 1), 18, tableY + 3);
-    pdf.text(d.hora, 30, tableY + 3);
-    pdf.text(d.bairro.substring(0, 25), 55, tableY + 3);
-
-    const motivo = d.motivo.length > 55 ? d.motivo.substring(0, 52) + '...' : d.motivo;
-    pdf.text(motivo, 110, tableY + 3);
-    pdf.text(String(d.idade), 255, tableY + 3);
-    pdf.text(d.sexo, 275, tableY + 3);
-
-    tableY += rowHeightTable;
-  });
-
-  pdf.save(`dashboard-atendimentos-${dataAtual.replace(/\//g, '-')}.pdf`);
+  pdf.save(`samu-relatorio-${hoje()}.pdf`);
+  toast('PDF gerado.');
 }
 
-function resetFiltros() {
-  const filtros = ['fBairro','fSexo','fIdade','fTurno'];
-  filtros.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  setTimeout(() => aplicarFiltros(), 0);
+function cabecalhoPagina(pdf, titulo, W, M, NAVY, ORANGE) {
+  pdf.setFillColor(...NAVY);
+  pdf.rect(0, 0, W, 15, 'F');
+  pdf.setFillColor(...ORANGE);
+  pdf.rect(0, 15, W, 0.8, 'F');
+  try { pdf.addImage(SAMU_LOGO, 'JPEG', M, 2, 11, 11); } catch (err) { /* sem logo */ }
+  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(255, 255, 255);
+  pdf.text(titulo, M + 15, 9.5);
 }
 
-// Init
-aplicarFiltros();
+// ───────────────────────── Atalhos e início ─────────────────────────
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape') { fecharForm(); fecharImport(); }
+});
+
+carregar();
+montarFiltroIdade();
+atualizarListas();
+render();
 </script>
 </body>
 </html>
