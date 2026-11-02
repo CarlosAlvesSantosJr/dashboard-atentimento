@@ -5,7 +5,8 @@
   "description": "Painel estatístico de atendimentos do SAMU 192",
   "scripts": {
     "start": "node tests/server.js",
-    "test": "playwright test"
+    "test": "playwright test",
+    "screenshots": "node scripts/screenshots.js"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1"
