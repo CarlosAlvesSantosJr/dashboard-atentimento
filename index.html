@@ -332,6 +332,10 @@ tbody tr:hover { background: #fafbfd; }
 .check-obito strong { font-weight: 600; }
 .check-obito small { color: var(--muted); font-size: 12px; margin-left: auto; }
 .check-obito:has(input:checked) { background: var(--red-soft); border-color: #f2b8b8; color: var(--red); }
+.check-terceiros input { accent-color: var(--orange); }
+.check-terceiros:has(input:checked) { background: #fff4e8; border-color: #f5c99a; color: #b35c00; }
+.desabilitado { opacity: .45; pointer-events: none; }
+.tag-terceiros { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 6px; background: #fff4e8; color: #b35c00; border: 1px solid #f5c99a; }
 .tag-obito { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 8px; border-radius: 6px; background: #2b2b2b; color: #fff; }
 .err { color: var(--red); font-size: 13px; min-height: 18px; grid-column: span 2; }
 .import-opts { padding: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--muted); }
@@ -452,6 +456,14 @@ tbody tr:hover { background: #fafbfd; }
     </select>
   </div>
   <div class="field">
+    <label for="fTerceiros">Atendido por</label>
+    <select class="input" id="fTerceiros" onchange="render()" style="min-width:110px">
+      <option value="">Todos</option>
+      <option value="nao">SAMU</option>
+      <option value="sim">Terceiros</option>
+    </select>
+  </div>
+  <div class="field">
     <label for="fTurno">Turno</label>
     <select class="input" id="fTurno" onchange="render()">
       <option value="">Todos</option>
@@ -479,6 +491,11 @@ tbody tr:hover { background: #fafbfd; }
       <div class="kpi-label">Óbitos</div>
       <div class="kpi-value" id="kObitos">0</div>
       <div class="kpi-sub" id="kObitosSub">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color: #e8891c">
+      <div class="kpi-label">Atendidos por terceiros</div>
+      <div class="kpi-value" id="kTerceiros">0</div>
+      <div class="kpi-sub" id="kTerceirosSub">—</div>
     </div>
     <div class="kpi" style="--kpi-color: var(--navy2)">
       <div class="kpi-label">Idade média</div>
@@ -595,11 +612,11 @@ tbody tr:hover { background: #fafbfd; }
         <input class="input" id="iBairro" list="listaBairros" placeholder="Digite ou selecione o bairro" required>
         <datalist id="listaBairros"></datalist>
       </div>
-      <div class="field">
+      <div class="field" id="campoIdade">
         <label for="iIdade">Idade</label>
         <input class="input" type="number" id="iIdade" min="0" max="120" placeholder="anos" required>
       </div>
-      <div class="field">
+      <div class="field" id="campoSexo">
         <label>Sexo</label>
         <div class="seg">
           <input type="radio" name="iSexo" id="iSexoM" value="M"><label for="iSexoM" class="m">Masculino</label>
@@ -611,10 +628,15 @@ tbody tr:hover { background: #fafbfd; }
         <input class="input" id="iMotivo" list="listaMotivos" placeholder="Ex.: Clínico, Trauma, Cardiológico, Obstétrico…">
         <datalist id="listaMotivos"></datalist>
       </div>
-      <label class="check-obito full" for="iObito">
+      <label class="check-obito full" for="iObito" id="campoObito">
         <input type="checkbox" id="iObito">
         <strong>Óbito</strong>
         <small>marque se o paciente evoluiu a óbito</small>
+      </label>
+      <label class="check-obito check-terceiros full" for="iTerceiros">
+        <input type="checkbox" id="iTerceiros" onchange="aplicarTerceiros()">
+        <strong>Atendido por terceiros</strong>
+        <small>bombeiros ou familiares já levaram o paciente</small>
       </label>
       <div class="err" id="formErro"></div>
     </div>
@@ -650,7 +672,7 @@ tbody tr:hover { background: #fafbfd; }
 <script>
 // ───────────────────────── Armazenamento ─────────────────────────
 const STORAGE_KEY = 'samu_atendimentos_v1';
-const CAMPOS = ['data', 'hora', 'bairro', 'idade', 'sexo', 'motivo', 'obito'];
+const CAMPOS = ['data', 'hora', 'bairro', 'idade', 'sexo', 'motivo', 'obito', 'terceiros'];
 const CABECALHO_CSV = { motivo: 'especialidade' };
 let DADOS = [];
 let EXEMPLO = false;
@@ -723,7 +745,8 @@ const FAIXAS = (() => {
   f.push({ id: '91+', rotulo: '91+', min: 91, max: Infinity });
   return f;
 })();
-function faixaEtaria(idade) { return FAIXAS.find(f => idade >= f.min && idade <= f.max).id; }
+function temIdade(d) { return typeof d.idade === 'number' && !isNaN(d.idade); }
+function faixaEtaria(idade) { return typeof idade === 'number' && !isNaN(idade) ? FAIXAS.find(f => idade >= f.min && idade <= f.max).id : null; }
 function rotuloFaixa(id) { const f = FAIXAS.find(f => f.id === id); return f.id === '0-1' ? '0–1 ano (neonatal)' : `${f.rotulo} anos`; }
 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -745,8 +768,9 @@ function toast(msg, erro = false) {
 // ───────────────────────── Filtros ─────────────────────────
 function filtrar() {
   const ini = fIni.value, fim = fFim.value;
-  const b = fBairro.value, s = fSexo.value, i = fIdade.value, t = fTurno.value, e = fEsp.value, o = fObito.value;
+  const b = fBairro.value, s = fSexo.value, i = fIdade.value, t = fTurno.value, e = fEsp.value, o = fObito.value, tc = fTerceiros.value;
   return DADOS.filter(d => {
+    if (tc && !!d.terceiros !== (tc === 'sim')) return false;
     if (ini && d.data < ini) return false;
     if (fim && d.data > fim) return false;
     if (b && d.bairro !== b) return false;
@@ -760,7 +784,7 @@ function filtrar() {
 }
 
 function resetFiltros() {
-  ['fIni', 'fFim', 'fBairro', 'fSexo', 'fIdade', 'fTurno', 'fEsp', 'fObito'].forEach(id => document.getElementById(id).value = '');
+  ['fIni', 'fFim', 'fBairro', 'fSexo', 'fIdade', 'fTurno', 'fEsp', 'fObito', 'fTerceiros'].forEach(id => document.getElementById(id).value = '');
   render();
 }
 
@@ -797,7 +821,8 @@ function estatisticas(data) {
   const total = data.length;
   const masc = data.filter(d => d.sexo === 'M').length;
   const fem = data.filter(d => d.sexo === 'F').length;
-  const idades = data.map(d => d.idade);
+  const idades = data.filter(temIdade).map(d => d.idade);
+  const nIdades = idades.length;
   const porDia = {}, porHora = Array(24).fill(0), porSemana = Array(7).fill(0), porBairro = {}, porEsp = {}, obitosEsp = {};
   const faixas = Object.fromEntries(FAIXAS.map(f => [f.id, 0]));
   data.forEach(d => {
@@ -808,7 +833,7 @@ function estatisticas(data) {
     const esp = especialidade(d);
     porEsp[esp] = (porEsp[esp] || 0) + 1;
     if (d.obito) obitosEsp[esp] = (obitosEsp[esp] || 0) + 1;
-    faixas[faixaEtaria(d.idade)]++;
+    if (temIdade(d)) faixas[faixaEtaria(d.idade)]++;
   });
   const dias = Object.keys(porDia).length;
   const picoH = total ? porHora.indexOf(Math.max(...porHora)) : -1;
@@ -821,11 +846,12 @@ function estatisticas(data) {
     obitos: data.filter(d => d.obito).length,
     picoSemana: picoS >= 0 ? DIAS_SEMANA[picoS] : '—',
     picoSemanaQtd: picoS >= 0 ? porSemana[picoS] : 0,
-    faixaTop: total ? faixaTop : null,
+    terceiros: data.filter(d => d.terceiros).length,
+    faixaTop: nIdades ? faixaTop : null,
     mediaDia: dias ? total / dias : 0,
-    idadeMedia: total ? Math.round(idades.reduce((a, n) => a + n, 0) / total) : null,
-    idadeMin: total ? Math.min(...idades) : null,
-    idadeMax: total ? Math.max(...idades) : null,
+    idadeMedia: nIdades ? Math.round(idades.reduce((a, n) => a + n, 0) / nIdades) : null,
+    idadeMin: nIdades ? Math.min(...idades) : null,
+    idadeMax: nIdades ? Math.max(...idades) : null,
     porDia, porHora, faixas, bairros,
     picoHora: picoH >= 0 ? String(picoH).padStart(2, '0') + 'h' : '—',
     picoQtd: picoH >= 0 ? porHora[picoH] : 0,
@@ -838,8 +864,10 @@ function renderKpis(e) {
   kDias.textContent = e.dias ? `em ${e.dias} dia${e.dias > 1 ? 's' : ''} · ${e.turnos.dia} dia / ${e.turnos.noite} noite` : '—';
   kObitos.textContent = e.obitos;
   kObitosSub.textContent = e.total ? `${pct(e.obitos, e.total)} dos atendimentos` : '—';
+  kTerceiros.textContent = e.terceiros;
+  kTerceirosSub.textContent = e.total ? `${pct(e.terceiros, e.total)} dos atendimentos` : '—';
   kIdade.textContent = e.idadeMedia ?? '—';
-  kIdadeRange.textContent = e.total ? `anos · faixa mais atendida: ${rotuloFaixa(e.faixaTop[0])}` : 'anos';
+  kIdadeRange.textContent = e.faixaTop ? `anos · faixa mais atendida: ${rotuloFaixa(e.faixaTop[0])}` : 'anos';
   kSemana.textContent = e.picoSemana;
   const empates = e.porSemana.filter(v => v === e.picoSemanaQtd).length - 1;
   kSemanaSub.textContent = e.total ? `${e.picoSemanaQtd} ocorrências · ${pct(e.picoSemanaQtd, e.total)}${empates ? ` · empate com ${empates} dia(s)` : ''}` : '—';
@@ -978,10 +1006,10 @@ function renderTabela() {
       <td class="mono">${brData(d.data)}</td>
       <td class="mono">${esc(d.hora)}</td>
       <td>${esc(d.bairro)}</td>
-      <td class="mono">${esc(d.idade)}</td>
-      <td><span class="tag-sexo ${d.sexo === 'M' ? 'tag-m' : 'tag-f'}">${esc(d.sexo)}</span></td>
+      <td class="mono">${temIdade(d) ? esc(d.idade) : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${d.sexo ? `<span class="tag-sexo ${d.sexo === 'M' ? 'tag-m' : 'tag-f'}">${esc(d.sexo)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
       <td style="color:var(--muted)">${esc(d.motivo || '—')}</td>
-      <td>${d.obito ? '<span class="tag-obito">ÓBITO</span>' : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${d.terceiros ? '<span class="tag-terceiros">TERCEIROS</span>' : d.obito ? '<span class="tag-obito">ÓBITO</span>' : '<span style="color:var(--muted)">—</span>'}</td>
       <td><div class="row-actions">
         <button class="icon-btn" title="Editar" onclick="abrirForm('${d.id}')">${ICON_EDIT}</button>
         <button class="icon-btn del" title="Excluir" onclick="excluir('${d.id}')">${ICON_DEL}</button>
@@ -1025,6 +1053,8 @@ function abrirForm(id) {
   iSexoM.checked = r?.sexo === 'M';
   iSexoF.checked = r?.sexo === 'F';
   iObito.checked = !!r?.obito;
+  iTerceiros.checked = !!r?.terceiros;
+  aplicarTerceiros();
   formErro.textContent = '';
   ovForm.classList.add('show');
   setTimeout(() => (r ? iBairro : iHora).focus(), 50);
@@ -1032,14 +1062,27 @@ function abrirForm(id) {
 
 function fecharForm() { ovForm.classList.remove('show'); }
 
+// "Atendido por terceiros": paciente levado por bombeiros/familiares antes da chegada do SAMU.
+// Registra apenas data, hora, bairro e especialidade — idade, sexo e óbito ficam desabilitados.
+function aplicarTerceiros() {
+  const t = iTerceiros.checked;
+  [campoIdade, campoSexo, campoObito].forEach(el => el.classList.toggle('desabilitado', t));
+  iIdade.disabled = iSexoM.disabled = iSexoF.disabled = iObito.disabled = t;
+  iIdade.required = !t;
+  if (t) { iIdade.value = ''; iSexoM.checked = iSexoF.checked = iObito.checked = false; }
+}
+
 function salvarForm(ev) {
   ev.preventDefault();
-  const idade = parseInt(iIdade.value, 10);
-  const sexo = iSexoM.checked ? 'M' : iSexoF.checked ? 'F' : '';
-  if (!sexo) { formErro.textContent = 'Selecione o sexo do paciente.'; return; }
-  if (isNaN(idade) || idade < 0 || idade > 120) { formErro.textContent = 'Informe uma idade entre 0 e 120.'; return; }
+  const terceiros = iTerceiros.checked;
+  const idade = terceiros ? null : parseInt(iIdade.value, 10);
+  const sexo = terceiros ? '' : iSexoM.checked ? 'M' : iSexoF.checked ? 'F' : '';
+  if (!terceiros) {
+    if (!sexo) { formErro.textContent = 'Selecione o sexo do paciente.'; return; }
+    if (isNaN(idade) || idade < 0 || idade > 120) { formErro.textContent = 'Informe uma idade entre 0 e 120.'; return; }
+  }
 
-  const campos = { data: iData.value, hora: iHora.value, bairro: iBairro.value.trim(), idade, sexo, motivo: iMotivo.value.trim(), obito: iObito.checked };
+  const campos = { data: iData.value, hora: iHora.value, bairro: iBairro.value.trim(), idade, sexo, motivo: iMotivo.value.trim(), obito: terceiros ? false : iObito.checked, terceiros };
   if (iId.value) {
     const r = DADOS.find(d => d.id === iId.value);
     Object.assign(r, campos);
@@ -1056,7 +1099,8 @@ function salvarForm(ev) {
 
   if (salvarEOutro && !iId.value) {
     ['iHora', 'iBairro', 'iIdade', 'iMotivo'].forEach(id => document.getElementById(id).value = '');
-    iSexoM.checked = iSexoF.checked = iObito.checked = false;
+    iSexoM.checked = iSexoF.checked = iObito.checked = iTerceiros.checked = false;
+    aplicarTerceiros();
     formErro.textContent = '';
     iHora.focus();
   } else {
@@ -1098,7 +1142,8 @@ const ALIASES = {
   sexo: 'sexo', genero: 'sexo',
   motivo: 'motivo', 'motivo da ativacao': 'motivo', 'motivo / observacao': 'motivo', observacao: 'motivo', ocorrencia: 'motivo',
   especialidade: 'motivo', 'motivo / especialidade': 'motivo', 'motivo/especialidade': 'motivo',
-  obito: 'obito', obitos: 'obito'
+  obito: 'obito', obitos: 'obito',
+  terceiros: 'terceiros', 'atendido por terceiros': 'terceiros'
 };
 let importPendente = null;
 
@@ -1154,7 +1199,9 @@ function normalizarRegistro(bruto) {
   r.bairro = String(r.bairro ?? '').trim();
   r.motivo = String(r.motivo ?? '').trim();
   r.obito = r.obito === true || ['sim', 's', 'x', '1', 'true', 'obito'].includes(semAcento(r.obito ?? ''));
-  const ok = r.data && r.hora && horaNum(r.hora) < 24 && r.bairro && !isNaN(r.idade) && r.idade >= 0 && r.sexo;
+  r.terceiros = r.terceiros === true || ['sim', 's', 'x', '1', 'true'].includes(semAcento(r.terceiros ?? ''));
+  if (r.terceiros) { r.idade = null; r.sexo = ''; r.obito = false; }
+  const ok = r.data && r.hora && horaNum(r.hora) < 24 && r.bairro && (r.terceiros || (!isNaN(r.idade) && r.idade >= 0 && r.sexo));
   return ok ? { id: novoId(), ...r } : null;
 }
 
@@ -1209,7 +1256,7 @@ function exportarCSV() {
   const extras = [...new Set(lista.flatMap(d => Object.keys(d)))].filter(k => k !== 'id' && !CAMPOS.includes(k));
   const colunas = [...CAMPOS, ...extras];
   const celula = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  const valor = (d, c) => c === 'data' ? brData(d.data) : c === 'obito' ? (d.obito ? 'Sim' : 'Não') : d[c];
+  const valor = (d, c) => c === 'data' ? brData(d.data) : c === 'obito' || c === 'terceiros' ? (d[c] ? 'Sim' : 'Não') : d[c];
   const linhas = [colunas.map(c => CABECALHO_CSV[c] || c).join(';')].concat(lista.map(d => colunas.map(c => celula(valor(d, c))).join(';')));
   baixar(new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' }), `samu-atendimentos-${hoje()}.csv`);
   toast('Planilha exportada. Edite no Excel e use "Importar" para atualizar.');
@@ -1258,9 +1305,9 @@ async function exportarPDF() {
 
   // Indicadores
   const kpis = [
-    ['ATENDIMENTOS', String(e.total), `${e.dias} dia(s)`, RED],
+    ['ATENDIMENTOS', String(e.total), `${e.dias} dia(s) · ${e.terceiros} terceiros`, RED],
     ['ÓBITOS', String(e.obitos), pct(e.obitos, e.total), [43, 43, 43]],
-    ['IDADE MÉDIA', String(e.idadeMedia), `pico: ${rotuloFaixa(e.faixaTop[0])}`, NAVY],
+    ['IDADE MÉDIA', String(e.idadeMedia ?? '—'), e.faixaTop ? `pico: ${rotuloFaixa(e.faixaTop[0])}` : '—', NAVY],
     ['HORÁRIO DE PICO', e.picoHora, `${e.picoQtd} atendimentos`, ORANGE],
     ['DIA DA SEMANA', e.picoSemana, `${e.picoSemanaQtd} ocorrências`, ORANGE],
     ['BAIRRO LÍDER', e.bairros[0][0], `${e.bairros[0][1]} atend.`, RED],
@@ -1320,9 +1367,13 @@ async function exportarPDF() {
     columnStyles: Object.fromEntries(cabecalho.slice(1).map((_, i) => [i + 1, { halign: 'right' }])),
     didDrawPage: () => cabecalhoPagina(pdf, titulo, W, M, NAVY, ORANGE)
   });
-  const linhaResumo = (nome, sub) => [nome, sub.length, pct(sub.length, e.total), sub.filter(d => d.obito).length,
-    sub.filter(d => d.sexo === 'M').length, sub.filter(d => d.sexo === 'F').length, Math.round(sub.reduce((a, d) => a + d.idade, 0) / sub.length)];
-  const cabResumo = ['Atendimentos', '%', 'Óbitos', 'Masc.', 'Fem.', 'Idade média'];
+  const linhaResumo = (nome, sub) => {
+    const comIdade = sub.filter(temIdade);
+    return [nome, sub.length, pct(sub.length, e.total), sub.filter(d => d.obito).length, sub.filter(d => d.terceiros).length,
+      sub.filter(d => d.sexo === 'M').length, sub.filter(d => d.sexo === 'F').length,
+      comIdade.length ? Math.round(comIdade.reduce((a, d) => a + d.idade, 0) / comIdade.length) : '—'];
+  };
+  const cabResumo = ['Atendimentos', '%', 'Óbitos', 'Terceiros', 'Masc.', 'Fem.', 'Idade média'];
 
   pdf.addPage('a4', 'l');
   resumo('Resumo por especialidade', ['Especialidade', ...cabResumo], e.especialidades.map(([n]) => linhaResumo(n, data.filter(d => especialidade(d) === n))), 22);
@@ -1336,8 +1387,8 @@ async function exportarPDF() {
 
   pdf.addPage('a4', 'l');
   pdf.autoTable({
-    head: [['Data', 'Dia', 'Horário', 'Bairro', 'Idade', 'Sexo', 'Motivo / especialidade', 'Óbito']],
-    body: ordenar(data).reverse().map(d => [brData(d.data), DIAS_SEMANA[diaSemana(d.data)].slice(0, 3), d.hora, d.bairro, d.idade, d.sexo, d.motivo || '—', d.obito ? 'Sim' : '—']),
+    head: [['Data', 'Dia', 'Horário', 'Bairro', 'Idade', 'Sexo', 'Motivo / especialidade', 'Óbito', 'Terceiros']],
+    body: ordenar(data).reverse().map(d => [brData(d.data), DIAS_SEMANA[diaSemana(d.data)].slice(0, 3), d.hora, d.bairro, temIdade(d) ? d.idade : '—', d.sexo || '—', d.motivo || '—', d.obito ? 'Sim' : '—', d.terceiros ? 'Sim' : '—']),
     startY: 22,
     margin: { left: M, right: M, top: 22 },
     theme: 'striped',

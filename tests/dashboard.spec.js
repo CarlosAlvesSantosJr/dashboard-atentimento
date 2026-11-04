@@ -115,6 +115,30 @@ test.describe('Cadastro diário', () => {
     await expect(linha.locator('.tag-obito')).toHaveText('ÓBITO');
   });
 
+  test('"Atendido por terceiros" desabilita idade, sexo e óbito e salva só data, hora, bairro e especialidade', async ({ page }) => {
+    await page.getByRole('button', { name: 'Novo atendimento' }).click();
+    await page.fill('#iData', '2026-11-02');
+    await page.fill('#iHora', '10:15');
+    await page.fill('#iBairro', 'Centro');
+    await page.fill('#iMotivo', 'Trauma');
+    await page.check('#iTerceiros');
+    await expect(page.locator('#iIdade')).toBeDisabled();
+    await expect(page.locator('#iSexoM')).toBeDisabled();
+    await expect(page.locator('#iObito')).toBeDisabled();
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click();
+    await expect(page.locator('#ovForm')).not.toHaveClass(/show/);
+    await expect(kpi(page, 'kTotal')).toHaveText('1');
+    await expect(kpi(page, 'kTerceiros')).toHaveText('1');
+    await expect(kpi(page, 'kIdade')).toHaveText('—');
+    const r = await page.evaluate(() => DADOS[0]);
+    expect(r).toMatchObject({ hora: '10:15', bairro: 'Centro', motivo: 'Trauma', idade: null, sexo: '', obito: false, terceiros: true });
+    await expect(page.locator('#tbody tr').first().locator('.tag-terceiros')).toHaveText('TERCEIROS');
+    // desmarcar reabilita os campos
+    await page.getByRole('button', { name: 'Novo atendimento' }).click();
+    await expect(page.locator('#iIdade')).toBeEnabled();
+    await expect(page.locator('#iTerceiros')).not.toBeChecked();
+  });
+
   test('"Salvar e cadastrar outro" mantém o formulário aberto e a data', async ({ page }) => {
     await novoAtendimento(page, { data: '2026-11-03', hora: '08:00', bairro: 'Centro', idade: 40, sexo: 'M', motivo: 'Trauma' }, 'Salvar e cadastrar outro');
     await expect(page.locator('#ovForm')).toHaveClass(/show/);
@@ -258,9 +282,9 @@ test.describe('Exportação', () => {
     expect(download.suggestedFilename()).toMatch(/^samu-atendimentos-\d{4}-\d{2}-\d{2}\.csv$/);
     const conteudo = fs.readFileSync(await download.path(), 'utf-8');
     const linhas = conteudo.replace(/^﻿/, '').trim().split(/\r\n/);
-    expect(linhas[0]).toBe('data;hora;bairro;idade;sexo;especialidade;obito;unidade');
-    expect(linhas[1]).toBe('02/11/2026;08:00;Centro;45;M;Trauma;Sim;USA 01');
-    expect(linhas[2]).toBe('02/11/2026;09:00;Lapa;3;F;Pediátrico;Não;USB 02');
+    expect(linhas[0]).toBe('data;hora;bairro;idade;sexo;especialidade;obito;terceiros;unidade');
+    expect(linhas[1]).toBe('02/11/2026;08:00;Centro;45;M;Trauma;Sim;Não;USA 01');
+    expect(linhas[2]).toBe('02/11/2026;09:00;Lapa;3;F;Pediátrico;Não;Não;USB 02');
 
     await importar(page, 'reimport.csv', conteudo);
     await expect(kpi(page, 'kTotal')).toHaveText('2');
